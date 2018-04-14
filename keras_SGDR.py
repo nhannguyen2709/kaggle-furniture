@@ -4,11 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-##########################
-########## SGDR ##########
-##########################
-
-
 class SGDRScheduler(Callback):
     '''Cosine annealing learning rate scheduler with periodic restarts.
     # Usage

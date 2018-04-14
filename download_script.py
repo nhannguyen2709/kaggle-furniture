@@ -1,17 +1,3 @@
-#!/usr/bin/python3.5
-# -*- coding:utf-8 -*-
-# Created Time: Fri 02 Mar 2018 03:58:07 PM CST
-# Purpose: download image
-# Mail: tracyliang18@gmail.com
-# Adapted to python 3 by Aloisio Dourado in Sun Mar 11 2018
-
-# Note to Kagglers: This script will not run directly in Kaggle kernels. You
-# need to download it and run it on your local machine.
-
-# Images that already exist will not be downloaded again, so the script can
-# resume a partially completed download. All images will be saved in the JPG
-# format with 90% compression quality.
-
 import sys, os, multiprocessing, urllib3, csv
 from PIL import Image
 from io import BytesIO

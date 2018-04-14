@@ -3,9 +3,6 @@ import keras.backend as K
 import numpy as np
 import matplotlib.pyplot as plt
 
-################
-##### CLR  #####
-################
 
 class CyclicLR(Callback):
     """This callback implements a cyclical learning rate policy (CLR).
