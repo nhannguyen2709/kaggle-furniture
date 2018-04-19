@@ -6,6 +6,25 @@ from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import Model
 from keras.optimizers import Adam, SGD
 from keras.preprocessing.image import ImageDataGenerator
+from keras.utils import multi_gpu_model
+
+
+class MultiGPUModel(Model):
+    def __init__(self, base_model, gpus):
+        parallel_model = multi_gpu_model(base_model, gpus)
+        self.__dict__.update(parallel_model.__dict__)
+        self._base_model = base_model
+
+    def __getattribute__(self, attrname):
+        '''Override load and save methods to be used from the serial-model. The
+        serial-model holds references to the weights in the multi-gpu model.
+        '''
+        # return Model.__getattribute__(self, attrname)
+        if 'load' in attrname or 'save' in attrname:
+            return getattr(self._base_model, attrname)
+
+        return super(MultiGPUModel, self).__getattribute__(attrname)
+
 
 def evaluate_model_no_data_augmentation(valid_dir, input_shape, checkpoint_dir, base_model, model_name, num_workers):
     valid_datagen = ImageDataGenerator(
