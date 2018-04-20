@@ -25,7 +25,12 @@ class FurnituresDataset(Sequence):
             width_shift_range=0.05,
             height_shift_range=0.05,
             horizontal_flip=True)
+        self.on_train_begin()
         self.on_epoch_end()
+
+    def on_train_begin(self):
+        if self.shuffle:
+            self.x, self.y = shuffle(self.x, self.y)
 
     def on_epoch_end(self):
         if self.shuffle:
