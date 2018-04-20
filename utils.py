@@ -1,6 +1,7 @@
 import numpy as np
 import os
 
+from keras.applications.densenet import DenseNet201
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import Model
@@ -49,6 +50,29 @@ def evaluate_model_no_data_augmentation(valid_dir, input_shape, checkpoint_dir, 
         model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['acc'])
         val_loss, val_acc = model.evaluate_generator(valid_generator, workers=num_workers)
         print(weights_filename, val_loss, val_acc)
+
+
+def build_densenet_201(verbose=True):
+    model = DenseNet201(include_top=False, pooling='max')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
+    model = Model(inputs=model.layers[0].input, outputs=output)
+    finetuned_layers_names = [
+        # 'conv5_block31_1_conv',
+        # 'conv5_block31_2_conv',
+        'conv5_block32_1_conv',
+        'conv5_block32_2_conv',
+        'predictions']
+    finetuned_layers = [model.get_layer(name=layer_name)
+                        for layer_name in finetuned_layers_names]
+    for layer in model.layers:
+        if layer not in finetuned_layers:
+            layer.trainable = False
+    if verbose:
+        model.summary()
+    model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
+    return model
 
 
 def build_inception_resnet_v2(verbose=True):
