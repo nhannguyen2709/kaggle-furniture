@@ -14,17 +14,18 @@ class FurnituresDataset(Sequence):
             x_set,
             y_set,
             batch_size,
+            datagen=ImageDataGenerator(
+                rescale=1. / 255,
+                width_shift_range=0.05,
+                height_shift_range=0.05,
+                horizontal_flip=True),
             num_classes=128,
             shuffle=True):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.num_classes = num_classes
         self.shuffle = shuffle
-        self.datagen = ImageDataGenerator(
-            rescale=1. / 255,
-            width_shift_range=0.05,
-            height_shift_range=0.05,
-            horizontal_flip=True)
+        self.datagen = datagen
         self.on_train_begin()
         self.on_epoch_end()
 
@@ -44,14 +45,17 @@ class FurnituresDataset(Sequence):
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_imgs = np.array([cv2.resize(cv2.imread(file_name), (299, 299))
                                 for file_name in batch_x])
-        augmented_data = self.datagen.flow(
-            batch_imgs,
-            to_categorical(
-                np.array(batch_y),
-                num_classes=self.num_classes),
-            batch_size=self.batch_size).next()
-        del batch_imgs
-        return augmented_data
+        if self.datagen == None:
+            return batch_imgs, to_categorical(np.array(batch_y), num_classes=self.num_classes)
+        else:
+            augmented_data = self.datagen.flow(
+                batch_imgs,
+                to_categorical(
+                    np.array(batch_y),
+                    num_classes=self.num_classes),
+                batch_size=self.batch_size).next()
+            del batch_imgs
+            return augmented_data
 
 
 class FurnituresDatasetNoLabels(Sequence):
