@@ -22,34 +22,22 @@ from keras_CLR import CyclicLR
 
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
     data_dir='data/train/')
-x_from_valid_images, y_from_valid_images = get_image_paths_and_labels(
-    data_dir='data/validation/')
-test_datagen = ImageDataGenerator(
-    rescale=1. / 255,
-    width_shift_range=0.05,
-    height_shift_range=0.05,
-    horizontal_flip=True)
-test_generator = test_datagen.flow_from_directory(
-    'data/validation',
-    batch_size=32,
-    target_size=(299, 299),
-    class_mode='categorical',
-    shuffle=False)
 
 # k-fold cross-validation on train images, evaluate on validation images
 batch_size = 16
-epochs = 1
-num_workers = 10
+epochs = 10
+n_splits = 5
+n_repeats = 2
+num_workers = 4
 num_gpus = 2
-fold = 0
-rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=1)
+rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats)
 
+fold = 0
 for train_index, test_index in rskf.split(
         x_from_train_images, y_from_train_images):
     fold += 1
     x_train, x_valid = x_from_train_images[train_index], x_from_train_images[test_index]
     y_train, y_valid = y_from_train_images[train_index], y_from_train_images[test_index]
-    x_train, y_train = shuffle(x_train, y_train)
     print('Found {} images belonging to {} classes'.format(len(x_train), 128))
     print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
 
@@ -57,8 +45,9 @@ for train_index, test_index in rskf.split(
         x_train, y_train, batch_size=batch_size)
     valid_generator = FurnituresDataset(
         x_valid, y_valid, batch_size=batch_size, shuffle=False)
+    weights_path = 'checkpoint/inception_resnet_v2/fold{}.weights.best.hdf5'.format(fold)
     save_best = ModelCheckpoint(
-        'checkpoint/inception_resnet_v2/fold{}.weights.best.hdf5'.format(fold),
+        weights_path,
         monitor='val_acc',
         verbose=1,
         save_best_only=True,
@@ -73,6 +62,9 @@ for train_index, test_index in rskf.split(
 
     ## multi-gpu train
     # base_model = build_inception_resnet_v2()
+    # base_model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
+    #                    loss='categorical_crossentropy',
+    #                    metrics=['acc'])
     # parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
     # parallel_model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['acc'])
     # parallel_model.fit_generator(generator=train_generator,
@@ -85,13 +77,13 @@ for train_index, test_index in rskf.split(
 
     ## single-gpu train
     model = build_inception_resnet_v2()
+    if os.path.exists(weights_path):
+        model.load_weights(weights_path)
+    model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
     model.fit_generator(generator=train_generator,
                         epochs=epochs,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
-    val_set_loss, val_set_acc = model.evaluate_generator(
-        generator=test_generator, workers=num_workers)
-
-    print('\nFold: {} -- val_loss: {} -- val_acc: {}'.format(fold,
-                                                             val_set_loss, val_set_acc))
