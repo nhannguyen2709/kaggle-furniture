@@ -69,9 +69,7 @@ def build_densenet_201(verbose=True):
             layer.trainable = False
     if verbose:
         model.summary()
-    model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+
     return model
 
 
@@ -111,9 +109,7 @@ def build_inception_resnet_v2(verbose=True):
             layer.trainable = False
     if verbose:
         model.summary()
-    model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+    
     return model
 
 
