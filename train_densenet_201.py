@@ -24,7 +24,7 @@ x_from_train_images, y_from_train_images = get_image_paths_and_labels(
     data_dir='data/train/')
 
 # k-fold cross-validation on train and validation images
-batch_size = 32
+batch_size = 16
 epochs = 5
 num_workers = 4
 n_splits = 5
@@ -42,9 +42,10 @@ for train_index, test_index in rskf.split(
     print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
 
     train_generator = FurnituresDataset(
-        x_train, y_train, batch_size=batch_size)
+        x_train, y_train, batch_size=batch_size, input_shape=(224, 224))
     valid_generator = FurnituresDataset(
-        x_valid, y_valid, batch_size=batch_size, shuffle=False)
+        x_valid, y_valid, batch_size=batch_size, 
+        input_shape=(224, 224), datagen=None, shuffle=False)
     weights_path = 'checkpoint/densenet_201/fold{}.weights.best.hdf5'.format(
         fold)
     save_best = ModelCheckpoint(
@@ -75,8 +76,8 @@ for train_index, test_index in rskf.split(
     # single-gpu train
     model = build_densenet_201()
     model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
-                    loss='categorical_crossentropy',
-                    metrics=['acc'])
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
     if os.path.exists(weights_path):
         model.load_weights(weights_path)
     model.fit_generator(generator=train_generator,
