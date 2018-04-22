@@ -1,6 +1,7 @@
 import numpy as np
 import os
 
+from keras.applications.inception_v3 import InceptionV3
 from keras.applications.densenet import DenseNet201
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from keras.layers import Dense, GlobalMaxPooling2D
@@ -73,10 +74,29 @@ def build_densenet_201(verbose=True):
     return model
 
 
+def build_inception_v3(verbose=True):
+    model = InceptionV3(include_top=False, pooling='max')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
+    model = Model(inputs=model.layers[0].input, outputs=output)
+    finetuned_layers_names = [
+        'conv2d_93',
+        'conv2d_86',
+        'conv2d_94',
+        'predictions']
+    finetuned_layers = [model.get_layer(name=layer_name)
+                        for layer_name in finetuned_layers_names]
+    for layer in model.layers:
+        if layer not in finetuned_layers:
+            layer.trainable = False
+    if verbose:
+        model.summary()
+
+    return model
+
+
 def build_inception_resnet_v2(verbose=True):
-    model = InceptionResNetV2(include_top=False)
-    features = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
-    output = Dense(128, activation='softmax', name='predictions')(features)
+    model = InceptionResNetV2(include_top=False, pooling='max')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
         # 'conv2d_189',
