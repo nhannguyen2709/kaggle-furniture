@@ -15,7 +15,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.utils import shuffle
 
-from data import FurnituresDataset
+from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
 from utils import build_inception_resnet_v2, get_image_paths_and_labels, MultiGPUModel
 from keras_CLR import CyclicLR
 
@@ -24,13 +24,13 @@ x_from_train_images, y_from_train_images = get_image_paths_and_labels(
     data_dir='data/train/')
 
 # k-fold cross-validation on train images, evaluate on validation images
-batch_size = 16
+batch_size = 32
 epochs = 10
 n_splits = 5
 n_repeats = 2
 num_workers = 4
 num_gpus = 2
-rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats)
+rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=2)
 
 fold = 0
 for train_index, test_index in rskf.split(
@@ -41,11 +41,11 @@ for train_index, test_index in rskf.split(
     print('Found {} images belonging to {} classes'.format(len(x_train), 128))
     print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
 
-    train_generator = FurnituresDataset(
+    train_generator = FurnituresDatasetWithAugmentation(
         x_train, y_train, batch_size=batch_size, input_shape=(299, 299))
-    valid_generator = FurnituresDataset(
+    valid_generator = FurnituresDatasetNoAugmentation(
         x_valid, y_valid, batch_size=batch_size, 
-        input_shape=(299, 299),datagen=None, shuffle=False)
+        input_shape=(299, 299))
     weights_path = 'checkpoint/inception_resnet_v2/fold{}.weights.best.hdf5'.format(
         fold)
     save_best = ModelCheckpoint(

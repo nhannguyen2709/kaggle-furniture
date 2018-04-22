@@ -45,7 +45,7 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_imgs = np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
-                                for file_name in batch_x])
+                               for file_name in batch_x])
         augmented_data = self.datagen.flow(
             batch_imgs,
             to_categorical(
@@ -63,23 +63,11 @@ class FurnituresDatasetNoAugmentation(Sequence):
             y_set,
             batch_size,
             input_shape,
-            num_classes=128,
-            shuffle=True):
+            num_classes=128):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.input_shape = input_shape
         self.num_classes = num_classes
-        self.shuffle = shuffle
-        self.on_train_begin()
-        self.on_epoch_end()
-
-    def on_train_begin(self):
-        if self.shuffle:
-            self.x, self.y = shuffle(self.x, self.y)
-
-    def on_epoch_end(self):
-        if self.shuffle:
-            self.x, self.y = shuffle(self.x, self.y)
 
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
@@ -102,16 +90,15 @@ class FurnituresDatasetNoLabels(Sequence):
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
-                               for file_name in batch_x])
-        return batch_imgs / 255.
+        return np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
+                        for file_name in batch_x]) / 255.
 
 
 if __name__ == '__main__':
     from utils import get_image_paths_and_labels
     x_from_train_images, y_from_train_images = get_image_paths_and_labels(
         data_dir='data/train/')
-    train_generator = FurnituresDataset(
+    train_generator = FurnituresDatasetWithAugmentation(
         x_from_train_images, y_from_train_images,
         batch_size=16)
     for i in range(len(train_generator)):
