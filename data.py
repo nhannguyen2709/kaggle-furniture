@@ -14,6 +14,7 @@ class FurnituresDataset(Sequence):
             x_set,
             y_set,
             batch_size,
+            input_shape,
             datagen=ImageDataGenerator(
                 rescale=1. / 255,
                 width_shift_range=0.05,
@@ -23,9 +24,10 @@ class FurnituresDataset(Sequence):
             shuffle=True):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
+        self.input_shape = input_shape
+        self.datagen = datagen
         self.num_classes = num_classes
         self.shuffle = shuffle
-        self.datagen = datagen
         self.on_train_begin()
         self.on_epoch_end()
 
@@ -43,7 +45,7 @@ class FurnituresDataset(Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), (299, 299))
+        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
                                 for file_name in batch_x])
         if self.datagen == None:
             return batch_imgs, to_categorical(np.array(batch_y), num_classes=self.num_classes)
@@ -59,15 +61,28 @@ class FurnituresDataset(Sequence):
 
 
 class FurnituresDatasetNoLabels(Sequence):
-    def __init__(self, x_set, batch_size):
+    def __init__(self, x_set, batch_size, input_shape):
         self.x = x_set
         self.batch_size = batch_size
+        self.input_shape = input_shape
 
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), (299, 299))
+        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
                                for file_name in batch_x])
         return batch_imgs / 255.
+
+
+if __name__=='__main__':
+    from utils import get_image_paths_and_labels
+    x_from_train_images, y_from_train_images = get_image_paths_and_labels(
+        data_dir='data/train/')
+    train_generator = FurnituresDataset(
+        x_from_train_images, y_from_train_images, 
+        batch_size=16)
+    for i in range(len(train_generator)):
+        x, y = train_generator.__getitem__(i)
+        print(x.shape, y.shape)
