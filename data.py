@@ -1,5 +1,6 @@
 import argparse
 import cv2
+import gc
 import os
 import numpy as np
 from keras.utils import Sequence, to_categorical
@@ -52,7 +53,8 @@ class FurnituresDatasetWithAugmentation(Sequence):
                 np.array(batch_y),
                 num_classes=self.num_classes),
             batch_size=self.batch_size).next()
-        del batch_imgs
+        del batch_imgs, datagen
+        gc.collect()
         return augmented_data
 
 
