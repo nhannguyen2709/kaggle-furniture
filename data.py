@@ -20,11 +20,6 @@ class FurnituresDatasetWithAugmentation(Sequence):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.input_shape = input_shape
-        self.datagen=ImageDataGenerator(
-                rescale=1. / 255,
-                width_shift_range=0.05,
-                height_shift_range=0.05,
-                horizontal_flip=True)
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.on_train_begin()
@@ -46,7 +41,12 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_imgs = np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
                                for file_name in batch_x])
-        augmented_data = self.datagen.flow(
+        datagen=ImageDataGenerator(
+                rescale=1. / 255,
+                width_shift_range=0.05,
+                height_shift_range=0.05,
+                horizontal_flip=True)
+        augmented_data = datagen.flow(
             batch_imgs,
             to_categorical(
                 np.array(batch_y),
@@ -94,13 +94,13 @@ class FurnituresDatasetNoLabels(Sequence):
                         for file_name in batch_x]) / 255.
 
 
-if __name__ == '__main__':
-    from utils import get_image_paths_and_labels
-    x_from_train_images, y_from_train_images = get_image_paths_and_labels(
-        data_dir='data/train/')
-    train_generator = FurnituresDatasetWithAugmentation(
-        x_from_train_images, y_from_train_images,
-        batch_size=16)
-    for i in range(len(train_generator)):
-        x, y = train_generator.__getitem__(i)
-        print(x.shape, y.shape)
+# if __name__ == '__main__':
+#     from utils import get_image_paths_and_labels
+#     x_from_train_images, y_from_train_images = get_image_paths_and_labels(
+#         data_dir='data/train/')
+#     train_generator = FurnituresDatasetWithAugmentation(
+#         x_from_train_images, y_from_train_images,
+#         input_shape=(299, 299), batch_size=16)
+#     for i in range(len(train_generator)):
+#         x, y = train_generator.__getitem__(i)
+#         print(x.shape, y.shape)
