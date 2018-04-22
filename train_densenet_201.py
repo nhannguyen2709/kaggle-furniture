@@ -45,8 +45,10 @@ for train_index, test_index in rskf.split(
         x_train, y_train, batch_size=batch_size)
     valid_generator = FurnituresDataset(
         x_valid, y_valid, batch_size=batch_size, shuffle=False)
+    weights_path = 'checkpoint/densenet_201/fold{}.weights.best.hdf5'.format(
+        fold)
     save_best = ModelCheckpoint(
-        'checkpoint/densenet_201/fold{}.weights.best.hdf5'.format(fold),
+        weights_path,
         monitor='val_acc',
         verbose=1,
         save_best_only=True,
@@ -72,6 +74,11 @@ for train_index, test_index in rskf.split(
 
     # single-gpu train
     model = build_densenet_201()
+    model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
+                    loss='categorical_crossentropy',
+                    metrics=['acc'])
+    if os.path.exists(weights_path):
+        model.load_weights(weights_path)
     model.fit_generator(generator=train_generator,
                         epochs=epochs,
                         callbacks=callbacks,
