@@ -42,10 +42,12 @@ for train_index, test_index in rskf.split(
     print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
 
     train_generator = FurnituresDataset(
-        x_train, y_train, batch_size=batch_size)
+        x_train, y_train, batch_size=batch_size, input_shape=(299, 299))
     valid_generator = FurnituresDataset(
-        x_valid, y_valid, batch_size=batch_size, shuffle=False)
-    weights_path = 'checkpoint/inception_resnet_v2/fold{}.weights.best.hdf5'.format(fold)
+        x_valid, y_valid, batch_size=batch_size, 
+        input_shape=(299, 299),datagen=None, shuffle=False)
+    weights_path = 'checkpoint/inception_resnet_v2/fold{}.weights.best.hdf5'.format(
+        fold)
     save_best = ModelCheckpoint(
         weights_path,
         monitor='val_acc',
