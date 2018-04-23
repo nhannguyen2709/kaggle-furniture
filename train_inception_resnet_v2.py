@@ -74,8 +74,6 @@ for train_index, test_index in rskf.split(
     #                              callbacks=callbacks,
     #                              validation_data=valid_generator,
     #                              workers=num_workers)
-    # val_set_loss, val_set_acc = base_model.evaluate_generator(
-    #     generator=test_generator, workers=num_workers)
 
     ## single-gpu train
     model = build_inception_resnet_v2()
@@ -89,3 +87,5 @@ for train_index, test_index in rskf.split(
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
+
+    K.clear_session()

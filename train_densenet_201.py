@@ -85,3 +85,5 @@ for train_index, test_index in rskf.split(
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
+    
+    K.clear_session()

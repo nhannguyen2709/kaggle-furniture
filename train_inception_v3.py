@@ -74,18 +74,18 @@ for train_index, test_index in rskf.split(
     #                              callbacks=callbacks,
     #                              validation_data=valid_generator,
     #                              workers=num_workers)
-    # val_set_loss, val_set_acc = base_model.evaluate_generator(
-    #     generator=test_generator, workers=num_workers)
 
     ## single-gpu train
-    model = build_inception_v3()
+    model = build_inception_v3()   
     if os.path.exists(weights_path):
         model.load_weights(weights_path)
     model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+                loss='categorical_crossentropy',
+                metrics=['acc'])
     model.fit_generator(generator=train_generator,
                         epochs=epochs,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
+
+    K.clear_session()
