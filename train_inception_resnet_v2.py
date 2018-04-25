@@ -23,16 +23,16 @@ from keras_CLR import CyclicLR
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
     data_dir='data/train/')
 
-# k-fold cross-validation on train images, evaluate on validation images
+# 5-fold cross-validation
 batch_size = 32
-epochs = 10
+epochs = 15
+num_workers = 6
 n_splits = 5
-n_repeats = 2
-num_workers = 4
+n_repeats = 1
 num_gpus = 2
 rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=2)
 
-fold = 0
+fold = 1
 for train_index, test_index in rskf.split(
         x_from_train_images, y_from_train_images):
     fold += 1
@@ -54,13 +54,20 @@ for train_index, test_index in rskf.split(
         verbose=1,
         save_best_only=True,
         mode='max')
+    save_every_5_epoch = ModelCheckpoint('checkpoint/inception_resnet_v2/fold' + 
+        str(fold) + '.weights.{epoch:02d}-{val_acc:.4f}.hdf5',
+        monitor='val_acc',
+        verbose=1,
+        period=5,
+        mode='max')
     clr_triangular = CyclicLR(
         mode='exp_range',
+        base_lr=1e-4,
         max_lr=1e-3,
         step_size=len(x_train) //
         batch_size *
         2)
-    callbacks = [clr_triangular, save_best]
+    callbacks = [clr_triangular, save_best, save_every_5_epoch]
 
     ## multi-gpu train
     # base_model = build_inception_resnet_v2()
@@ -82,10 +89,19 @@ for train_index, test_index in rskf.split(
     model.compile(optimizer=Adam(),  # SGD(momentum=0.9, nesterov=True)
                   loss='categorical_crossentropy',
                   metrics=['acc'])
-    model.fit_generator(generator=train_generator,
-                        epochs=epochs,
-                        callbacks=callbacks,
-                        validation_data=valid_generator,
-                        workers=num_workers)
+
+    if weights_path.split('/')[-1].split('.')[0] == 'fold2':        
+        model.fit_generator(generator=train_generator,
+                            epochs=epochs,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers,
+                            initial_epoch=8)
+    else:
+        model.fit_generator(generator=train_generator,
+                            epochs=epochs,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
 
     K.clear_session()
