@@ -79,6 +79,11 @@ def build_inception_v3(verbose=True):
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
+        'conv2d_87',
+        'conv2d_91',
+        'conv2d_88',
+        'conv2d_89',
+        'conv2d_92',
         'conv2d_93',
         'conv2d_86',
         'conv2d_94',
@@ -144,3 +149,8 @@ def get_image_paths_and_labels(data_dir):
     x = np.array(x)
     y = np.array(y)
     return x, y
+
+
+if __name__=='__main__':
+    model = build_inception_v3()
+    model.summary()
