@@ -83,9 +83,6 @@ def build_se_inception_v3(verbose=True):
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
-        'conv2d_93',
-        'conv2d_86',
-        'conv2d_94',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
@@ -123,28 +120,10 @@ def build_se_inception_resnet_v2(verbose=True):
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
-        # 'conv2d_189',
-        # 'conv2d_190',
-        # 'conv2d_191',
-        # 'conv2d_188',
-        # 'block8_7_conv',
-        # 'conv2d_191',
-        # 'conv2d_193',
-        # 'conv2d_194',
-        # 'block8_8_conv',
-        # 'conv2d_197',
-        # 'conv2d_192',
-        # 'conv2d_195',
-        # 'conv2d_198',
-        # 'conv2d_196',
-        # 'conv2d_199',
-        # 'block8_9_conv',
-        # 'conv2d_201',
-        # 'conv2d_202',
-        # 'conv2d_200',
-        # 'conv2d_203',
         # 'block8_10_conv',
-        'conv_7b',
+        # 'dense_87',
+        # 'dense_88',
+        # 'conv_7b',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
