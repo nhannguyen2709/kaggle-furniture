@@ -28,16 +28,42 @@ from keras.layers import MaxPooling2D
 from keras.layers import AveragePooling2D
 from keras.layers import GlobalAveragePooling2D
 from keras.layers import GlobalMaxPooling2D
+from keras.layers import multiply, Permute
 from keras.engine.topology import get_source_inputs
 from keras.utils.data_utils import get_file
 from keras import backend as K
 from keras.applications.imagenet_utils import decode_predictions
 from keras.applications.imagenet_utils import _obtain_input_shape
 
-from se import squeeze_excite_block
 
 WEIGHTS_PATH = ''
 WEIGHTS_PATH_NO_TOP = ''
+
+
+def squeeze_excite_block(input, ratio=16):
+    ''' Create a squeeze-excite block
+    Args:
+        input: input tensor
+        filters: number of output filters
+        k: width factor
+
+    Returns: a keras tensor
+    '''
+    init = input
+    channel_axis = 1 if K.image_data_format() == "channels_first" else -1
+    filters = init._keras_shape[channel_axis]
+    se_shape = (1, 1, filters)
+
+    se = GlobalAveragePooling2D()(init)
+    se = Reshape(se_shape)(se)
+    se = Dense(filters // ratio, activation='relu', kernel_initializer='he_normal', use_bias=False)(se)
+    se = Dense(filters, activation='sigmoid', kernel_initializer='he_normal', use_bias=False)(se)
+
+    if K.image_data_format() == 'channels_first':
+        se = Permute((3, 1, 2))(se)
+
+    x = multiply([init, se])
+    return x
 
 
 def _conv2d_bn(x,
