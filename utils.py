@@ -10,6 +10,10 @@ from keras.optimizers import Adam, SGD
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import multi_gpu_model
 
+from keras_squeeze_excite_network.se_densenet import SEDenseNetImageNet264
+from keras_squeeze_excite_network.se_inception_v3 import SEInceptionV3
+from keras_squeeze_excite_network.se_inception_resnet_v2 import SEInceptionResNetV2
+
 
 class MultiGPUModel(Model):
     def __init__(self, base_model, gpus):
@@ -74,19 +78,73 @@ def build_densenet_201(verbose=True):
     return model
 
 
+def build_se_inception_v3(verbose=True):
+    model = SEInceptionV3(include_top=False, weights='imagenet', pooling='max')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
+    model = Model(inputs=model.layers[0].input, outputs=output)
+    finetuned_layers_names = [
+        'conv2d_93',
+        'conv2d_86',
+        'conv2d_94',
+        'predictions']
+    finetuned_layers = [model.get_layer(name=layer_name)
+                        for layer_name in finetuned_layers_names]
+    for layer in model.layers:
+        if layer not in finetuned_layers:
+            layer.trainable = False
+    if verbose:
+        model.summary()
+
+    return model
+
+
 def build_inception_v3(verbose=True):
     model = InceptionV3(include_top=False, pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
-        'conv2d_87',
-        'conv2d_91',
-        'conv2d_88',
-        'conv2d_89',
-        'conv2d_92',
         'conv2d_93',
         'conv2d_86',
         'conv2d_94',
+        'predictions']
+    finetuned_layers = [model.get_layer(name=layer_name)
+                        for layer_name in finetuned_layers_names]
+    for layer in model.layers:
+        if layer not in finetuned_layers:
+            layer.trainable = False
+    if verbose:
+        model.summary()
+
+    return model
+
+
+def build_se_inception_resnet_v2(verbose=True):
+    model = SEInceptionResNetV2(include_top=False, weights='imagenet', pooling='max')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
+    model = Model(inputs=model.layers[0].input, outputs=output)
+    finetuned_layers_names = [
+        # 'conv2d_189',
+        # 'conv2d_190',
+        # 'conv2d_191',
+        # 'conv2d_188',
+        # 'block8_7_conv',
+        # 'conv2d_191',
+        # 'conv2d_193',
+        # 'conv2d_194',
+        # 'block8_8_conv',
+        # 'conv2d_197',
+        # 'conv2d_192',
+        # 'conv2d_195',
+        # 'conv2d_198',
+        # 'conv2d_196',
+        # 'conv2d_199',
+        # 'block8_9_conv',
+        # 'conv2d_201',
+        # 'conv2d_202',
+        # 'conv2d_200',
+        # 'conv2d_203',
+        # 'block8_10_conv',
+        'conv_7b',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
@@ -151,6 +209,23 @@ def get_image_paths_and_labels(data_dir):
     return x, y
 
 
-if __name__=='__main__':
-    model = build_inception_v3()
-    model.summary()
+def train_lr_schedule(epoch, lr):
+    """
+    Learning rate schedule for the first stage of the training scheme.
+    """
+    if epoch % 2 == 0 and epoch != 0:
+        decayed_lr = lr * .94
+    else:
+        decayed_lr = lr
+    return decayed_lr
+
+
+def finetune_lr_schedule(epoch, lr):
+    """
+    Learning rate schedule for the second stage of the training scheme.
+    """
+    if epoch % 4 == 0 and epoch != 0:
+        decayed_lr = lr * .94
+    else:
+        decayed_lr = lr
+    return decayed_lr
