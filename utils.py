@@ -120,10 +120,10 @@ def build_se_inception_resnet_v2(verbose=True):
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
-        # 'block8_10_conv',
-        # 'dense_87',
-        # 'dense_88',
-        # 'conv_7b',
+        'block8_10_conv',
+        'dense_87',
+        'dense_88',
+        'conv_7b',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
