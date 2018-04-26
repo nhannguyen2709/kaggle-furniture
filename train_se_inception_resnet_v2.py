@@ -25,23 +25,26 @@ x_from_train_images, y_from_train_images = get_image_paths_and_labels(
 x_from_val_images, y_from_val_images = get_image_paths_and_labels(
     data_dir='data/validation/')
 
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.1, random_state=2)
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.7, random_state=2)
 for val_index, minival_index in sss.split(x_from_val_images, y_from_val_images):
-    x_from_minival_images, y_from_minival_images = x_from_val_images[minival_index], y_from_val_images[minival_index]
-    x_from_val_images, y_from_val_images = x_from_val_images[val_index], y_from_val_images[val_index]
-    
+    x_from_minival_images, y_from_minival_images = x_from_val_images[
+        minival_index], y_from_val_images[minival_index]
+    x_from_val_images, y_from_val_images = x_from_val_images[
+        val_index], y_from_val_images[val_index]
+
 x_from_train_val_images = np.append(x_from_train_images, x_from_val_images)
 y_from_train_val_images = np.append(y_from_train_images, y_from_val_images)
 
 # 5-fold cross-validation
-input_shape = (448, 448) 
+input_shape = (448, 448)
 batch_size = 16
 epochs = 3
 num_workers = 10
 n_splits = 5
 n_repeats = 1
 num_gpus = 2
-rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=2)
+rskf = RepeatedStratifiedKFold(
+    n_splits=n_splits, n_repeats=n_repeats, random_state=2)
 
 fold = 1
 for train_index, test_index in rskf.split(
@@ -55,50 +58,54 @@ for train_index, test_index in rskf.split(
     train_generator = FurnituresDatasetWithAugmentation(
         x_train, y_train, batch_size=batch_size, input_shape=input_shape)
     valid_generator = FurnituresDatasetNoAugmentation(
-        x_valid, y_valid, batch_size=batch_size, 
+        x_valid, y_valid, batch_size=batch_size,
         input_shape=input_shape)
     minival_generator = FurnituresDatasetNoAugmentation(x_from_minival_images, y_from_minival_images,
-        batch_size=32, input_shape=input_shape)
+                                                        batch_size=32, input_shape=input_shape)
     weights_path = 'checkpoint/se_inception_resnet_v2/fold{}.weights.best.hdf5'.format(
         fold)
-    save_best = ExponentialMovingAverage(filepath=weights_path, 
-        verbose=1, 
-        save_best_only=True, 
-        save_weights_only=True,
-        mode='max')
-    
+    save_best = ExponentialMovingAverage(filepath=weights_path,
+                                         verbose=1,
+                                         save_best_only=True,
+                                         save_weights_only=True,
+                                         mode='max')
+
     lr_scheduler = LearningRateScheduler(schedule=train_lr_schedule, verbose=1)
     callbacks = [lr_scheduler, save_best]
 
-    ## multi-gpu train
-    # base_model = build_se_inception_resnet_v2()
-    # base_model.compile(optimizer=RMSprop(lr=4.5e-2),
-    #                    loss='categorical_crossentropy',
-    #                    metrics=['acc'])
-    # parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
-    # parallel_model.compile(optimizer=RMSprop(lr=4.5e-2), loss='categorical_crossentropy', metrics=['acc'])
-    # parallel_model.fit_generator(generator=train_generator,
-    #                              epochs=epochs,
-    #                              callbacks=callbacks,
-    #                              validation_data=valid_generator,
-    #                              workers=num_workers)
+    # # multi-gpu train
+    base_model = build_se_inception_resnet_v2()
+    base_model.compile(optimizer=RMSprop(lr=4.5e-2),
+                       loss='categorical_crossentropy',
+                       metrics=['acc'])
+    parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
+    parallel_model.compile(optimizer=RMSprop(lr=4.5e-2), loss='categorical_crossentropy', metrics=['acc'])
+    parallel_model.fit_generator(generator=train_generator,
+                                 epochs=epochs,
+                                 callbacks=callbacks,
+                                 validation_data=valid_generator,
+                                 workers=num_workers)
+    minival_loss, minival_acc = base_model.evaluate_generator(
+        generator=minival_generator, workers=num_workers)
+    print('Fold: {} - minival_loss: {} - minival_acc: {}'.format(fold,
+                                                                 minival_loss, minival_acc))
+    # # single-gpu train
+    # model = build_se_inception_resnet_v2()
+    # if os.path.exists(weights_path):
+    #     model.load_weights(weights_path)
+    # model.compile(optimizer=RMSprop(lr=4.5e-2),
+    #               loss='categorical_crossentropy',
+    #               metrics=['acc'])
 
-    ## single-gpu train
-    model = build_se_inception_resnet_v2()
-    if os.path.exists(weights_path):
-        model.load_weights(weights_path)
-    model.compile(optimizer=RMSprop(lr=4.5e-2),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
-
-    model.fit_generator(generator=train_generator,
-                        epochs=epochs,
-                        steps_per_epoch=1,
-                        callbacks=callbacks,
-                        validation_data=valid_generator,
-                        workers=num_workers)
-
-    minival_loss, minival_acc = model.evaluate_generator(generator=minival_generator, workers=num_workers)
-    print('Fold: {} - minival_loss: {} - minival_acc: {}'.format(fold, minival_loss, minival_acc))
+    # model.fit_generator(generator=train_generator,
+    #                     epochs=epochs,
+    #                     steps_per_epoch=1,
+    #                     callbacks=callbacks,
+    #                     validation_data=valid_generator,
+    #                     workers=num_workers)
+    # minival_loss, minival_acc = model.evaluate_generator(
+    #     generator=minival_generator, workers=num_workers)
+    # print('Fold: {} - minival_loss: {} - minival_acc: {}'.format(fold,
+    #                                                              minival_loss, minival_acc))
 
     K.clear_session()
