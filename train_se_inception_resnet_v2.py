@@ -23,7 +23,7 @@ from utils import build_se_inception_resnet_v2, get_image_paths_and_labels, Mult
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
     data_dir='data/train/')
 x_from_val_images, y_from_val_images = get_image_paths_and_labels(
-    data_dir='data/train/')
+    data_dir='data/validation/')
 
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.1, random_state=2)
 for val_index, minival_index in sss.split(x_from_val_images, y_from_val_images):
