@@ -37,7 +37,7 @@ y_from_train_val_images = np.append(y_from_train_images, y_from_val_images)
 
 # 5-fold cross-validation
 input_shape = (560, 560)
-batch_size = 8
+batch_size = 16
 epochs = 10
 num_workers = 16
 n_splits = 5
@@ -72,6 +72,8 @@ for train_index, test_index in rskf.split(
     
     # # multi-gpu train
     base_model = build_inception_resnet_v2()
+    # if os.path.exists(weights_path):
+    #     base_model.load_weights(weights_path)
     base_model.compile(optimizer=RMSprop(lr=4.5e-2),
                        loss='categorical_crossentropy',
                        metrics=['acc'])
@@ -79,17 +81,14 @@ for train_index, test_index in rskf.split(
     parallel_model.compile(optimizer=RMSprop(lr=4.5e-2), loss='categorical_crossentropy', metrics=['acc'])
     parallel_model.fit_generator(generator=train_generator,
                                  epochs=epochs,
-                                 steps_per_epoch=1,
                                  callbacks=callbacks,
                                  validation_data=valid_generator,
                                  workers=num_workers)
-    print(K.get_value(parallel_model.optimizer.lr))
+    
     base_model.compile(optimizer=RMSprop(lr=4.5e-3),
                        loss='categorical_crossentropy',
                        metrics=['acc'])
-    parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
     parallel_model.compile(optimizer=RMSprop(lr=4.5e-3), loss='categorical_crossentropy', metrics=['acc'])
-    print(K.get_value(parallel_model.optimizer.lr))
     finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
     callbacks = [finetune_lr_scheduler, save_best]
     parallel_model.fit_generator(generator=minival_generator,
@@ -104,16 +103,20 @@ for train_index, test_index in rskf.split(
     # model.compile(optimizer=RMSprop(lr=4.5e-2),
     #               loss='categorical_crossentropy',
     #               metrics=['acc'])
-
     # model.fit_generator(generator=train_generator,
     #                     epochs=epochs,
     #                     steps_per_epoch=1,
     #                     callbacks=callbacks,
     #                     validation_data=valid_generator,
     #                     workers=num_workers)
-    # minival_loss, minival_acc = model.evaluate_generator(
-    #     generator=minival_generator, workers=num_workers)
-    # print('Fold: {} - minival_loss: {} - minival_acc: {}'.format(fold,
-    #                                                              minival_loss, minival_acc))
+
+    # model.compile(optimizer=RMSprop(lr=4.5e-3), loss='categorical_crossentropy', metrics=['acc'])
+    # finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
+    # callbacks = [finetune_lr_scheduler, save_best]
+    # model.fit_generator(generator=minival_generator,
+    #                     epochs=epochs,
+    #                     callbacks=callbacks,
+    #                     validation_data=valid_generator,
+    #                     workers=num_workers)
 
     K.clear_session()
