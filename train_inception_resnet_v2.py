@@ -42,7 +42,7 @@ epochs = 10
 num_workers = 16
 n_splits = 5
 n_repeats = 1
-num_gpus = 1
+num_gpus = 2
 rskf = RepeatedStratifiedKFold(
     n_splits=n_splits, n_repeats=n_repeats, random_state=2)
 

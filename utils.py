@@ -160,8 +160,8 @@ def build_inception_resnet_v2(verbose=True):
         # 'conv2d_201',
         # 'conv2d_202',
         # 'conv2d_200',
-        # 'conv2d_203',
-        # 'block8_10_conv',
+        'conv2d_203',
+        'block8_10_conv',
         'conv_7b',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
