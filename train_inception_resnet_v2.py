@@ -101,8 +101,8 @@ for train_index, test_index in rskf.split(
     #                              workers=num_workers)
     # single-gpu train
     model = build_inception_resnet_v2()
-    if os.path.exists(weights_path):
-        model.load_weights(weights_path)
+    # if os.path.exists(weights_path):
+    #     model.load_weights(weights_path)
     model.compile(optimizer=RMSprop(lr=4.5e-2),
                   loss='categorical_crossentropy',
                   metrics=['acc'])
