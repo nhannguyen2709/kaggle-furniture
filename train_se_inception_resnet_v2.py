@@ -66,7 +66,10 @@ for train_index, test_index in rskf.split(
         fold)
     save_best = ExponentialMovingAverage(filepath=weights_path,
                                          verbose=1,
-                                         save_weights_only=True)
+                                         monitor='val_acc',
+                                         save_best_only=True,
+                                         save_weights_only=True,
+                                         mode='max')
     train_lr_scheduler = LearningRateScheduler(schedule=train_lr_schedule, verbose=1)
     callbacks = [train_lr_scheduler, save_best]
     

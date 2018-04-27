@@ -66,9 +66,12 @@ for train_index, test_index in rskf.split(
         fold)
     save_best = ExponentialMovingAverage(filepath=weights_path,
                                          verbose=1,
-                                         save_weights_only=True)
+                                         monitor='val_acc',
+                                         save_best_only=True,
+                                         save_weights_only=True,
+                                         mode='max')
     train_lr_scheduler = LearningRateScheduler(schedule=train_lr_schedule, verbose=1)
-    callbacks = [train_lr_scheduler, save_best]
+    callbacks = [save_best, train_lr_scheduler]
     
     # # multi-gpu train
     # base_model = build_inception_resnet_v2()
@@ -105,14 +108,13 @@ for train_index, test_index in rskf.split(
                   metrics=['acc'])
     model.fit_generator(generator=train_generator,
                         epochs=epochs,
-                        steps_per_epoch=1,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
 
     model.compile(optimizer=RMSprop(lr=4.5e-3), loss='categorical_crossentropy', metrics=['acc'])
     finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
-    callbacks = [finetune_lr_scheduler, save_best]
+    callbacks = [save_best, finetune_lr_scheduler]
     model.fit_generator(generator=minival_generator,
                         epochs=epochs,
                         callbacks=callbacks,
