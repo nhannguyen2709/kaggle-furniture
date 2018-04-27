@@ -36,7 +36,7 @@ x_from_train_val_images = np.append(x_from_train_images, x_from_val_images)
 y_from_train_val_images = np.append(y_from_train_images, y_from_val_images)
 
 # 5-fold cross-validation
-input_shape = (560, 560)
+input_shape = (448, 448)
 batch_size = 16
 epochs = 4
 num_workers = 16
