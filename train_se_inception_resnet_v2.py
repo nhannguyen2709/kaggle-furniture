@@ -43,7 +43,7 @@ num_gpus = 2
 rskf = RepeatedStratifiedKFold(
     n_splits=n_splits, n_repeats=n_repeats, random_state=2)
 
-fold = 1
+fold = 0
 for train_index, test_index in rskf.split(
         x_from_train_images, y_from_train_images):
     fold += 1
