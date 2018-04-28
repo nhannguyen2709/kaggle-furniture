@@ -71,61 +71,61 @@ for train_index, test_index in rskf.split(
     callbacks = [train_lr_scheduler, save_best]
     
     # # multi-gpu train
-    base_model = build_inception_resnet_v2()
-    # if os.path.exists(filepath):
-    #     base_model.load(filepath)
-    base_model.compile(optimizer=Adam(lr=1e-2),
-                       loss='categorical_crossentropy',
-                       metrics=['acc'])
-    parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
-    parallel_model.compile(optimizer=Adam(lr=1e-2), loss='categorical_crossentropy', metrics=['acc'])
-    parallel_model.fit_generator(generator=train_generator,
-                                 epochs=epochs,
-                                 callbacks=callbacks,
-                                 validation_data=valid_generator,
-                                 workers=num_workers)
+    # base_model = build_inception_resnet_v2()
+    # # if os.path.exists(filepath):
+    # #     base_model.load_model(filepath)
+    # base_model.compile(optimizer=Adam(lr=1e-2),
+    #                    loss='categorical_crossentropy',
+    #                    metrics=['acc'])
+    # parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
+    # parallel_model.compile(optimizer=Adam(lr=1e-2), loss='categorical_crossentropy', metrics=['acc'])
+    # parallel_model.fit_generator(generator=train_generator,
+    #                              epochs=epochs,
+    #                              callbacks=callbacks,
+    #                              validation_data=valid_generator,
+    #                              workers=num_workers)
     
-    del train_generator, valid_generator
+    # del train_generator, valid_generator
 
-    val_generator = FurnituresDatasetWithAugmentation(
-        x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
-    minival_generator = FurnituresDatasetNoAugmentation(
-        x_from_minival_images, y_from_minival_images,
-        batch_size=32, input_shape=input_shape)
-    print('Found {} images belonging to {} classes'.format(len(x_from_val_images), 128))
-    print('Found {} images belonging to {} classes'.format(len(x_from_minival_images), 128))
-    base_model.compile(optimizer=Adam(lr=1e-3),
-                       loss='categorical_crossentropy',
-                       metrics=['acc'])
-    parallel_model.compile(optimizer=Adam(lr=1e-3), loss='categorical_crossentropy', metrics=['acc'])
-    finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
-    callbacks = [finetune_lr_scheduler, save_best]
-    parallel_model.fit_generator(generator=val_generator,
-                                 epochs=epochs,
-                                 callbacks=callbacks,
-                                 validation_data=minival_generator,
-                                 workers=num_workers)
-
-    # # single-gpu train
-    # model = build_inception_resnet_v2()
-    # if os.path.exists(filepath):
-    #     model.load(filepath)
-    # model.compile(optimizer=Adam(lr=1e-2),
-    #               loss='categorical_crossentropy',
-    #               metrics=['acc'])
-    # model.fit_generator(generator=train_generator,
-    #                     epochs=epochs,
-    #                     callbacks=callbacks,
-    #                     validation_data=valid_generator,
-    #                     workers=num_workers)
-    
-    # model.compile(optimizer=Adam(lr=1e-3), loss='categorical_crossentropy', metrics=['acc'])
+    # val_generator = FurnituresDatasetWithAugmentation(
+    #     x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
+    # minival_generator = FurnituresDatasetNoAugmentation(
+    #     x_from_minival_images, y_from_minival_images,
+    #     batch_size=32, input_shape=input_shape)
+    # print('Found {} images belonging to {} classes'.format(len(x_from_val_images), 128))
+    # print('Found {} images belonging to {} classes'.format(len(x_from_minival_images), 128))
+    # base_model.compile(optimizer=Adam(lr=1e-3),
+    #                    loss='categorical_crossentropy',
+    #                    metrics=['acc'])
+    # parallel_model.compile(optimizer=Adam(lr=1e-3), loss='categorical_crossentropy', metrics=['acc'])
     # finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
     # callbacks = [finetune_lr_scheduler, save_best]
-    # model.fit_generator(generator=val_generator,
-                        #   epochs=epochs,
-                        #   callbacks=callbacks,
-                        #   validation_data=minival_generator,
-                        #   workers=num_workers)
+    # parallel_model.fit_generator(generator=val_generator,
+    #                              epochs=epochs,
+    #                              callbacks=callbacks,
+    #                              validation_data=minival_generator,
+    #                              workers=num_workers)
+
+    # single-gpu train
+    model = build_inception_resnet_v2()
+    # if os.path.exists(filepath):
+    #     model.load_model(filepath)
+    model.compile(optimizer=Adam(lr=1e-2),
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
+    model.fit_generator(generator=train_generator,
+                        epochs=epochs,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+    
+    model.compile(optimizer=Adam(lr=1e-3), loss='categorical_crossentropy', metrics=['acc'])
+    finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
+    callbacks = [finetune_lr_scheduler, save_best]
+    model.fit_generator(generator=val_generator,
+                          epochs=epochs,
+                          callbacks=callbacks,
+                          validation_data=minival_generator,
+                          workers=num_workers)
 
     K.clear_session()

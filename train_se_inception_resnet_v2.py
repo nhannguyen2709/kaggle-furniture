@@ -73,7 +73,7 @@ for train_index, test_index in rskf.split(
     # # multi-gpu train
     base_model = build_se_inception_resnet_v2()
     # if os.path.exists(filepath):
-    #     base_model.load(filepath)
+    #     base_model.load_model(filepath)
     base_model.compile(optimizer=Adam(lr=1e-2),
                        loss='categorical_crossentropy',
                        metrics=['acc'])
@@ -109,7 +109,7 @@ for train_index, test_index in rskf.split(
     # # single-gpu train
     # model = build_se_inception_resnet_v2()
     # if os.path.exists(filepath):
-    #     model.load(filepath)
+    #     model.load_model(filepath)
     # model.compile(optimizer=Adam(lr=1e-2),
     #               loss='categorical_crossentropy',
     #               metrics=['acc'])
