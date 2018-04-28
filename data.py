@@ -1,8 +1,8 @@
 import argparse
 import cv2
-import gc
 import os
 import numpy as np
+from imgaug import augmenters as iaa
 from keras.utils import Sequence, to_categorical
 from keras.preprocessing.image import ImageDataGenerator
 
@@ -16,11 +16,13 @@ class FurnituresDatasetWithAugmentation(Sequence):
             y_set,
             batch_size,
             input_shape,
+            percent_cropped=0.1,
             num_classes=128,
             shuffle=True):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.input_shape = input_shape
+        self.percent_cropped = percent_cropped
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.on_train_begin()
@@ -40,13 +42,23 @@ class FurnituresDatasetWithAugmentation(Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
-                               for file_name in batch_x])
-        datagen=ImageDataGenerator(
-                rescale=1. / 255,
-                width_shift_range=0.05,
-                height_shift_range=0.05,
-                horizontal_flip=True)
+
+        batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
+        batch_imgs = [iaa.Crop(px=(self.percent_cropped*img_arr.shape[0],
+                                   self.percent_cropped*img_arr.shape[1],
+                                   self.percent_cropped*img_arr.shape[0],
+                                   self.percent_cropped*img_arr.shape[1]),
+                               keep_size=False).augment_image(img_arr)
+                      for img_arr in batch_imgs]
+        batch_imgs = np.array([cv2.resize(img_arr, 
+                                          self.input_shape, 
+                                          interpolation=cv2.INTER_NEAREST)
+                               for img_arr in batch_imgs])
+        datagen = ImageDataGenerator(
+            rescale=1. / 255,
+            width_shift_range=0.05,
+            height_shift_range=0.05,
+            horizontal_flip=True)
         augmented_data = datagen.flow(
             batch_imgs,
             to_categorical(
@@ -54,7 +66,7 @@ class FurnituresDatasetWithAugmentation(Sequence):
                 num_classes=self.num_classes),
             batch_size=self.batch_size).next()
         del batch_imgs, datagen
-        gc.collect()
+        
         return augmented_data
 
 
@@ -65,10 +77,12 @@ class FurnituresDatasetNoAugmentation(Sequence):
             y_set,
             batch_size,
             input_shape,
+            percent_cropped=0.1,
             num_classes=128):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.input_shape = input_shape
+        self.percent_cropped = percent_cropped
         self.num_classes = num_classes
 
     def __len__(self):
@@ -77,14 +91,27 @@ class FurnituresDatasetNoAugmentation(Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        return np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
-                        for file_name in batch_x]) / 255., to_categorical(np.array(batch_y), num_classes=self.num_classes)
+
+        batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
+        batch_imgs = [iaa.Crop(px=(self.percent_cropped*img_arr.shape[0],
+                                   self.percent_cropped*img_arr.shape[1],
+                                   self.percent_cropped*img_arr.shape[0],
+                                   self.percent_cropped*img_arr.shape[1]),
+                               keep_size=False).augment_image(img_arr)
+                      for img_arr in batch_imgs]
+        batch_imgs = np.array([cv2.resize(img_arr,
+                                          self.input_shape,
+                                          interpolation=cv2.INTER_NEAREST)
+                               for img_arr in batch_imgs])
+
+        return batch_imgs / 255., to_categorical(np.array(batch_y), num_classes=self.num_classes)
 
 
 class FurnituresDatasetNoLabels(Sequence):
-    def __init__(self, x_set, batch_size, input_shape):
+    def __init__(self, x_set, batch_size, input_shape, percent_cropped):
         self.x = x_set
         self.batch_size = batch_size
+        self.percent_cropped = percent_cropped
         self.input_shape = input_shape
 
     def __len__(self):
@@ -92,8 +119,20 @@ class FurnituresDatasetNoLabels(Sequence):
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        return np.array([cv2.resize(cv2.imread(file_name), self.input_shape)
-                        for file_name in batch_x]) / 255.
+
+        batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
+        batch_imgs = [iaa.Crop(px=(self.percent_cropped*img_arr.shape[0],
+                                   self.percent_cropped*img_arr.shape[1],
+                                   self.percent_cropped*img_arr.shape[0],
+                                   self.percent_cropped*img_arr.shape[1]),
+                               keep_size=False).augment_image(img_arr)
+                      for img_arr in batch_imgs]
+        batch_imgs = np.array([cv2.resize(img_arr,
+                                          self.input_shape,
+                                          interpolation=cv2.INTER_NEAREST)
+                               for img_arr in batch_imgs])
+
+        return batch_imgs / 255.
 
 
 # if __name__ == '__main__':
