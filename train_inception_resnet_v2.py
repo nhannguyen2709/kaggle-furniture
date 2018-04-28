@@ -10,7 +10,7 @@ from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import Model
-from keras.optimizers import RMSprop
+from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 from sklearn.utils import shuffle
@@ -36,8 +36,8 @@ for val_index, minival_index in sss.split(x_from_val_images, y_from_val_images):
 input_shape = (299, 299)
 batch_size = 32
 epochs = 6
-num_workers = 10
-n_splits = 7
+num_workers = 4
+n_splits = 5
 n_repeats = 1
 num_gpus = 2
 rskf = RepeatedStratifiedKFold(
@@ -60,26 +60,25 @@ for train_index, test_index in rskf.split(
         x_valid, y_valid, 
         batch_size=batch_size, input_shape=input_shape)
 
-    weights_path = 'checkpoint/inception_resnet_v2/fold{}.weights.best.hdf5'.format(
+    filepath = 'checkpoint/inception_resnet_v2/fold{}.best.hdf5'.format(
         fold)
-    save_best = ExponentialMovingAverage(filepath=weights_path,
+    save_best = ExponentialMovingAverage(filepath=filepath,
                                          verbose=1,
                                          monitor='val_acc',
                                          save_best_only=True,
-                                         save_weights_only=True,
                                          mode='max')
     train_lr_scheduler = LearningRateScheduler(schedule=train_lr_schedule, verbose=1)
     callbacks = [train_lr_scheduler, save_best]
     
     # # multi-gpu train
     base_model = build_inception_resnet_v2()
-    # if os.path.exists(weights_path):
-    #     base_model.load_weights(weights_path)
-    base_model.compile(optimizer=RMSprop(lr=4.5e-2),
+    # if os.path.exists(filepath):
+    #     base_model.load(filepath)
+    base_model.compile(optimizer=Adam(lr=1e-2),
                        loss='categorical_crossentropy',
                        metrics=['acc'])
     parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
-    parallel_model.compile(optimizer=RMSprop(lr=4.5e-2), loss='categorical_crossentropy', metrics=['acc'])
+    parallel_model.compile(optimizer=Adam(lr=1e-2), loss='categorical_crossentropy', metrics=['acc'])
     parallel_model.fit_generator(generator=train_generator,
                                  epochs=epochs,
                                  callbacks=callbacks,
@@ -92,10 +91,13 @@ for train_index, test_index in rskf.split(
         x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
     minival_generator = FurnituresDatasetNoAugmentation(
         x_from_minival_images, y_from_minival_images,
-        batch_size=batch_size, input_shape=input_shape)
+        batch_size=32, input_shape=input_shape)
     print('Found {} images belonging to {} classes'.format(len(x_from_val_images), 128))
     print('Found {} images belonging to {} classes'.format(len(x_from_minival_images), 128))
-    parallel_model.compile(optimizer=RMSprop(lr=4.5e-3), loss='categorical_crossentropy', metrics=['acc'])
+    base_model.compile(optimizer=Adam(lr=1e-3),
+                       loss='categorical_crossentropy',
+                       metrics=['acc'])
+    parallel_model.compile(optimizer=Adam(lr=1e-3), loss='categorical_crossentropy', metrics=['acc'])
     finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
     callbacks = [finetune_lr_scheduler, save_best]
     parallel_model.fit_generator(generator=val_generator,
@@ -106,9 +108,9 @@ for train_index, test_index in rskf.split(
 
     # # single-gpu train
     # model = build_inception_resnet_v2()
-    # if os.path.exists(weights_path):
-    #     model.load_weights(weights_path)
-    # model.compile(optimizer=RMSprop(lr=4.5e-2),
+    # if os.path.exists(filepath):
+    #     model.load(filepath)
+    # model.compile(optimizer=Adam(lr=1e-2),
     #               loss='categorical_crossentropy',
     #               metrics=['acc'])
     # model.fit_generator(generator=train_generator,
@@ -116,14 +118,8 @@ for train_index, test_index in rskf.split(
     #                     callbacks=callbacks,
     #                     validation_data=valid_generator,
     #                     workers=num_workers)
-    # val_generator = FurnituresDatasetWithAugmentation(
-    #     x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
-    # minival_generator = FurnituresDatasetNoAugmentation(
-    #     x_from_minival_images, y_from_minival_images,
-    #     batch_size=batch_size, input_shape=input_shape)
-    # print('Found {} images belonging to {} classes'.format(len(x_from_val_images), 128))
-    # print('Found {} images belonging to {} classes'.format(len(x_from_minival_images), 128))
-    # model.compile(optimizer=RMSprop(lr=4.5e-3), loss='categorical_crossentropy', metrics=['acc'])
+    
+    # model.compile(optimizer=Adam(lr=1e-3), loss='categorical_crossentropy', metrics=['acc'])
     # finetune_lr_scheduler = LearningRateScheduler(schedule=finetune_lr_schedule, verbose=1)
     # callbacks = [finetune_lr_scheduler, save_best]
     # model.fit_generator(generator=val_generator,
