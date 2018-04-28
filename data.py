@@ -44,10 +44,10 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
         batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
-        batch_imgs = [iaa.Crop(px=(self.percent_cropped*img_arr.shape[0],
-                                   self.percent_cropped*img_arr.shape[1],
-                                   self.percent_cropped*img_arr.shape[0],
-                                   self.percent_cropped*img_arr.shape[1]),
+        batch_imgs = [iaa.Crop(px=(int(self.percent_cropped*img_arr.shape[0]),
+                                   int(self.percent_cropped*img_arr.shape[1]),
+                                   int(self.percent_cropped*img_arr.shape[0]),
+                                   int(self.percent_cropped*img_arr.shape[1])),
                                keep_size=False).augment_image(img_arr)
                       for img_arr in batch_imgs]
         batch_imgs = np.array([cv2.resize(img_arr, 
@@ -93,10 +93,10 @@ class FurnituresDatasetNoAugmentation(Sequence):
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
         batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
-        batch_imgs = [iaa.Crop(px=(self.percent_cropped*img_arr.shape[0],
-                                   self.percent_cropped*img_arr.shape[1],
-                                   self.percent_cropped*img_arr.shape[0],
-                                   self.percent_cropped*img_arr.shape[1]),
+        batch_imgs = [iaa.Crop(px=(int(self.percent_cropped*img_arr.shape[0]),
+                                   int(self.percent_cropped*img_arr.shape[1]),
+                                   int(self.percent_cropped*img_arr.shape[0]),
+                                   int(self.percent_cropped*img_arr.shape[1])),
                                keep_size=False).augment_image(img_arr)
                       for img_arr in batch_imgs]
         batch_imgs = np.array([cv2.resize(img_arr,
@@ -121,10 +121,10 @@ class FurnituresDatasetNoLabels(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
 
         batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
-        batch_imgs = [iaa.Crop(px=(self.percent_cropped*img_arr.shape[0],
-                                   self.percent_cropped*img_arr.shape[1],
-                                   self.percent_cropped*img_arr.shape[0],
-                                   self.percent_cropped*img_arr.shape[1]),
+        batch_imgs = [iaa.Crop(px=(int(self.percent_cropped*img_arr.shape[0]),
+                                   int(self.percent_cropped*img_arr.shape[1]),
+                                   int(self.percent_cropped*img_arr.shape[0]),
+                                   int(self.percent_cropped*img_arr.shape[1])),
                                keep_size=False).augment_image(img_arr)
                       for img_arr in batch_imgs]
         batch_imgs = np.array([cv2.resize(img_arr,
