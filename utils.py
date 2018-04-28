@@ -57,7 +57,7 @@ def evaluate_model_no_data_augmentation(valid_dir, input_shape, checkpoint_dir, 
         print(weights_filename, val_loss, val_acc)
 
 
-def build_densenet_201(verbose=True):
+def build_densenet_201(verbose=False):
     model = DenseNet201(include_top=False, pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -78,24 +78,24 @@ def build_densenet_201(verbose=True):
     return model
 
 
-def build_se_inception_v3(verbose=True):
+def build_se_inception_v3(verbose=False):
     model = SEInceptionV3(include_top=False, weights='imagenet', pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
-    finetuned_layers_names = [
-        'predictions']
-    finetuned_layers = [model.get_layer(name=layer_name)
-                        for layer_name in finetuned_layers_names]
-    for layer in model.layers:
-        if layer not in finetuned_layers:
-            layer.trainable = False
+    # finetuned_layers_names = [
+    #     'predictions']
+    # finetuned_layers = [model.get_layer(name=layer_name)
+    #                     for layer_name in finetuned_layers_names]
+    # for layer in model.layers:
+    #     if layer not in finetuned_layers:
+    #         layer.trainable = False
     if verbose:
         model.summary()
 
     return model
 
 
-def build_inception_v3(verbose=True):
+def build_inception_v3(verbose=False):
     model = InceptionV3(include_top=False, pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -115,28 +115,28 @@ def build_inception_v3(verbose=True):
     return model
 
 
-def build_se_inception_resnet_v2(verbose=True):
+def build_se_inception_resnet_v2(verbose=False):
     model = SEInceptionResNetV2(include_top=False, weights='imagenet', pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
-    finetuned_layers_names = [
-        'block8_10_conv',
-        'dense_87',
-        'dense_88',
-        'conv_7b',
-        'predictions']
-    finetuned_layers = [model.get_layer(name=layer_name)
-                        for layer_name in finetuned_layers_names]
-    for layer in model.layers:
-        if layer not in finetuned_layers:
-            layer.trainable = False
+    # finetuned_layers_names = [
+    #     'block8_10_conv',
+    #     'dense_87',
+    #     'dense_88',
+    #     'conv_7b',
+    #     'predictions']
+    # finetuned_layers = [model.get_layer(name=layer_name)
+    #                     for layer_name in finetuned_layers_names]
+    # for layer in model.layers:
+    #     if layer not in finetuned_layers:
+    #         layer.trainable = False
     if verbose:
         model.summary()
 
     return model
 
 
-def build_inception_resnet_v2(verbose=True):
+def build_inception_resnet_v2(verbose=False):
     model = InceptionResNetV2(include_top=False, pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -160,8 +160,8 @@ def build_inception_resnet_v2(verbose=True):
         # 'conv2d_201',
         # 'conv2d_202',
         # 'conv2d_200',
-        # 'conv2d_203',
-        # 'block8_10_conv',
+        'conv2d_203',
+        'block8_10_conv',
         'conv_7b',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
