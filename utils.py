@@ -33,15 +33,12 @@ class MultiGPUModel(Model):
 
 
 def build_densenet_201(verbose=False):
-    model = DenseNet201(include_top=False, pooling='max')
-    x = Dense(1024, activation='relu', name='fc_layer1')(model.layers[-1].output)
-    x = Dropout(0.4)(x)
-    output = Dense(128, activation='softmax', name='predictions')(x)
+    model = DenseNet201(include_top=False, pooling='avg')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
         # 'conv5_block32_1_conv',
         # 'conv5_block32_2_conv',
-        'fc_layer1',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
@@ -53,7 +50,7 @@ def build_densenet_201(verbose=False):
 
 
 def build_se_inception_v3(verbose=False):
-    model = SEInceptionV3(include_top=False, weights='imagenet', pooling='max')
+    model = SEInceptionV3(include_top=False, weights='imagenet', pooling='avg')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
 
@@ -61,14 +58,11 @@ def build_se_inception_v3(verbose=False):
 
 
 def build_inception_v3(verbose=False):
-    model = InceptionV3(include_top=False, pooling='max')
-    x = Dense(1024, activation='relu', name='fc_layer1')(model.layers[-1].output)
-    x = Dropout(0.4)(x)
-    output = Dense(128, activation='softmax', name='predictions')(x)
+    model = InceptionV3(include_top=False, pooling='avg')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
         # 'conv2d_94',
-        'fc_layer1',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
@@ -80,7 +74,7 @@ def build_inception_v3(verbose=False):
 
 
 def build_se_inception_resnet_v2(verbose=False):
-    model = SEInceptionResNetV2(include_top=False, weights='imagenet', pooling='max')
+    model = SEInceptionResNetV2(include_top=False, weights='imagenet', pooling='avg')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
 
@@ -88,14 +82,11 @@ def build_se_inception_resnet_v2(verbose=False):
 
 
 def build_inception_resnet_v2(verbose=False):
-    model = InceptionResNetV2(include_top=False, pooling='max')
-    x = Dense(1024, activation='relu', name='fc_layer1')(model.layers[-1].output)
-    x = Dropout(0.4)(x)
-    output = Dense(128, activation='softmax', name='predictions')(x)
+    model = InceptionResNetV2(include_top=False, pooling='avg')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
         # 'conv_7b',
-        'fc_layer1',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]

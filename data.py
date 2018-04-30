@@ -1,5 +1,6 @@
 import argparse
 import cv2
+import gc
 import os
 import numpy as np
 from imgaug import augmenters as iaa
@@ -43,17 +44,10 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
-        batch_imgs = [iaa.Crop(px=(int(self.percent_cropped*img_arr.shape[0]),
-                                   int(self.percent_cropped*img_arr.shape[1]),
-                                   int(self.percent_cropped*img_arr.shape[0]),
-                                   int(self.percent_cropped*img_arr.shape[1])),
-                               keep_size=False).augment_image(img_arr)
-                      for img_arr in batch_imgs]
-        batch_imgs = np.array([cv2.resize(img_arr, 
+        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), 
                                           self.input_shape, 
                                           interpolation=cv2.INTER_NEAREST)
-                               for img_arr in batch_imgs])
+                               for file_name in batch_x])
         datagen = ImageDataGenerator(
             rescale=1. / 255,
             width_shift_range=0.05,
@@ -66,7 +60,8 @@ class FurnituresDatasetWithAugmentation(Sequence):
                 num_classes=self.num_classes),
             batch_size=self.batch_size).next()
         del batch_imgs, datagen
-        
+        gc.collect()
+
         return augmented_data
 
 
@@ -92,17 +87,10 @@ class FurnituresDatasetNoAugmentation(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
-        batch_imgs = [iaa.Crop(px=(int(self.percent_cropped*img_arr.shape[0]),
-                                   int(self.percent_cropped*img_arr.shape[1]),
-                                   int(self.percent_cropped*img_arr.shape[0]),
-                                   int(self.percent_cropped*img_arr.shape[1])),
-                               keep_size=False).augment_image(img_arr)
-                      for img_arr in batch_imgs]
-        batch_imgs = np.array([cv2.resize(img_arr,
-                                          self.input_shape,
+        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), 
+                                          self.input_shape, 
                                           interpolation=cv2.INTER_NEAREST)
-                               for img_arr in batch_imgs])
+                               for file_name in batch_x])
 
         return batch_imgs / 255., to_categorical(np.array(batch_y), num_classes=self.num_classes)
 
@@ -120,17 +108,10 @@ class FurnituresDatasetNoLabels(Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = [cv2.imread(file_name) for file_name in batch_x]
-        batch_imgs = [iaa.Crop(px=(int(self.percent_cropped*img_arr.shape[0]),
-                                   int(self.percent_cropped*img_arr.shape[1]),
-                                   int(self.percent_cropped*img_arr.shape[0]),
-                                   int(self.percent_cropped*img_arr.shape[1])),
-                               keep_size=False).augment_image(img_arr)
-                      for img_arr in batch_imgs]
-        batch_imgs = np.array([cv2.resize(img_arr,
-                                          self.input_shape,
+        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), 
+                                          self.input_shape, 
                                           interpolation=cv2.INTER_NEAREST)
-                               for img_arr in batch_imgs])
+                               for file_name in batch_x])
 
         return batch_imgs / 255.
 
