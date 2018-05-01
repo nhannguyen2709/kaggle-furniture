@@ -17,15 +17,18 @@ class FurnituresDatasetWithAugmentation(Sequence):
             y_set,
             batch_size,
             input_shape,
-            percent_cropped=0.1,
             num_classes=128,
             shuffle=True):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.input_shape = input_shape
-        self.percent_cropped = percent_cropped
         self.num_classes = num_classes
         self.shuffle = shuffle
+        self.datagen = ImageDataGenerator(
+            rotation_range=30,
+            width_shift_range=0.05,
+            height_shift_range=0.05,
+            horizontal_flip=True)
         self.on_train_begin()
         self.on_epoch_end()
 
@@ -44,25 +47,16 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), 
-                                          self.input_shape, 
-                                          interpolation=cv2.INTER_NEAREST)
-                               for file_name in batch_x])
-        datagen = ImageDataGenerator(
-            rescale=1. / 255,
-            width_shift_range=0.05,
-            height_shift_range=0.05,
-            horizontal_flip=True)
-        augmented_data = datagen.flow(
-            batch_imgs,
-            to_categorical(
-                np.array(batch_y),
-                num_classes=self.num_classes),
-            batch_size=self.batch_size).next()
-        del batch_imgs, datagen
-        gc.collect()
+        batch_imgs = [cv2.resize(cv2.imread(file_name),
+                                 self.input_shape,
+                                 interpolation=cv2.INTER_NEAREST)
+                      for file_name in batch_x]
+        batch_imgs = [img_arr / 255. for img_arr in batch_imgs]
+        batch_imgs = [self.datagen.random_transform(
+            img_arr) for img_arr in batch_imgs]
 
-        return augmented_data
+        return np.array(batch_imgs), to_categorical(
+            np.array(batch_y), num_classes=self.num_classes)
 
 
 class FurnituresDatasetNoAugmentation(Sequence):
@@ -72,12 +66,10 @@ class FurnituresDatasetNoAugmentation(Sequence):
             y_set,
             batch_size,
             input_shape,
-            percent_cropped=0.1,
             num_classes=128):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.input_shape = input_shape
-        self.percent_cropped = percent_cropped
         self.num_classes = num_classes
 
     def __len__(self):
@@ -87,19 +79,20 @@ class FurnituresDatasetNoAugmentation(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), 
-                                          self.input_shape, 
+        batch_imgs = np.array([cv2.resize(cv2.imread(file_name),
+                                          self.input_shape,
                                           interpolation=cv2.INTER_NEAREST)
                                for file_name in batch_x])
 
-        return batch_imgs / 255., to_categorical(np.array(batch_y), num_classes=self.num_classes)
+        return batch_imgs / \
+            255., to_categorical(
+                np.array(batch_y), num_classes=self.num_classes)
 
 
 class FurnituresDatasetNoLabels(Sequence):
-    def __init__(self, x_set, batch_size, input_shape, percent_cropped):
+    def __init__(self, x_set, batch_size, input_shape):
         self.x = x_set
         self.batch_size = batch_size
-        self.percent_cropped = percent_cropped
         self.input_shape = input_shape
 
     def __len__(self):
@@ -108,21 +101,26 @@ class FurnituresDatasetNoLabels(Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name), 
-                                          self.input_shape, 
+        batch_imgs = np.array([cv2.resize(cv2.imread(file_name),
+                                          self.input_shape,
                                           interpolation=cv2.INTER_NEAREST)
                                for file_name in batch_x])
 
         return batch_imgs / 255.
 
 
-# if __name__ == '__main__':
-#     from utils import get_image_paths_and_labels
-#     x_from_train_images, y_from_train_images = get_image_paths_and_labels(
-#         data_dir='data/train/')
-#     train_generator = FurnituresDatasetWithAugmentation(
-#         x_from_train_images, y_from_train_images,
-#         input_shape=(299, 299), batch_size=16)
-#     for i in range(len(train_generator)):
-#         x, y = train_generator.__getitem__(i)
-#         print(x.shape, y.shape)
+if __name__ == '__main__':
+    import time
+    from utils import get_image_paths_and_labels
+
+    x_from_train_images, y_from_train_images = get_image_paths_and_labels(
+        data_dir='data/train/')
+    train_generator = FurnituresDatasetWithAugmentation(
+        x_from_train_images, y_from_train_images,
+        input_shape=(299, 299), batch_size=16)
+    for i in range(len(train_generator)):
+        start = time.time()
+        x, y = train_generator.__getitem__(i)
+        end = time.time()
+        print(x.shape, y.shape)
+        print('Time taken to load a batch of 16 images: {}'.format(end - start))
