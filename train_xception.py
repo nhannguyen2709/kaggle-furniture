@@ -34,8 +34,8 @@ for val_index, minival_index in sss.split(
         val_index], y_from_val_images[val_index]
 
 input_shape = (299, 299)
-batch_size = 32
-num_workers = 4
+batch_size = 16
+num_workers = 8
 n_splits = 3
 n_repeats = 1
 num_gpus = 2
@@ -71,7 +71,7 @@ for train_index, test_index in rskf.split(
         callbacks = [save_best_trainval]
         print('Train the last Dense layer')
         model = build_xception()
-        model.compile(optimizer=Adam(lr=1e-3, decay=0.01), loss='categorical_crossentropy',
+        model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
                     metrics=['acc'])
         model.fit_generator(generator=train_generator,
                             epochs=5,
@@ -87,7 +87,7 @@ for train_index, test_index in rskf.split(
         trainable_count = int(
             np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
         print('Trainable params: {:,}'.format(trainable_count))
-        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=0.01),
+        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
                     loss='categorical_crossentropy',
                     metrics=['acc'])
         model.fit_generator(generator=train_generator,
