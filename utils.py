@@ -4,6 +4,7 @@ import os
 from keras.applications.inception_v3 import InceptionV3
 from keras.applications.densenet import DenseNet201
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.xception import Xception
 from keras.layers import Dense, Dropout, GlobalMaxPooling2D
 from keras.models import Model
 from keras.optimizers import Adam, SGD
@@ -32,13 +33,11 @@ class MultiGPUModel(Model):
         return super(MultiGPUModel, self).__getattribute__(attrname)
 
 
-def build_densenet_201(verbose=False):
+def build_densenet_201():
     model = DenseNet201(include_top=False, pooling='avg')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
-        # 'conv5_block32_1_conv',
-        # 'conv5_block32_2_conv',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
@@ -49,7 +48,7 @@ def build_densenet_201(verbose=False):
     return model
 
 
-def build_se_inception_v3(verbose=False):
+def build_se_inception_v3():
     model = SEInceptionV3(include_top=False, weights='imagenet', pooling='avg')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -57,12 +56,11 @@ def build_se_inception_v3(verbose=False):
     return model
 
 
-def build_inception_v3(verbose=False):
+def build_inception_v3():
     model = InceptionV3(include_top=False, pooling='avg')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
-        # 'conv2d_94',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
                         for layer_name in finetuned_layers_names]
@@ -73,7 +71,7 @@ def build_inception_v3(verbose=False):
     return model
 
 
-def build_se_inception_resnet_v2(verbose=False):
+def build_se_inception_resnet_v2():
     model = SEInceptionResNetV2(include_top=False, weights='imagenet', pooling='avg')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -81,14 +79,27 @@ def build_se_inception_resnet_v2(verbose=False):
     return model
 
 
-def build_inception_resnet_v2(verbose=False):
+def build_inception_resnet_v2():
     model = InceptionResNetV2(include_top=False, pooling='avg')
     output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = [
-        # 'conv_7b',
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
+                        for layer_name in finetuned_layers_names]
+    for layer in model.layers:
+        if layer not in finetuned_layers:
+            layer.trainable = False
+    
+    return model
+
+
+def build_xception():
+    model = Xception(include_top=False, pooling='avg')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
+    model = Model(inputs=model.layers[0].input, outputs=output)
+    finetuned_layers_names = ['predictions']
+    finetuned_layers = [model.get_layer(name=layer_name) 
                         for layer_name in finetuned_layers_names]
     for layer in model.layers:
         if layer not in finetuned_layers:
@@ -110,23 +121,8 @@ def get_image_paths_and_labels(data_dir):
     return x, y
 
 
-def train_lr_schedule(epoch, lr):
-    """
-    Learning rate schedule for the first stage of the training scheme.
-    """
-    if epoch % 2 == 0 and epoch != 0:
-        decayed_lr = lr * .94
+def lr_schedule(epoch, lr):
+    if epoch % 5 == 0 and epoch != 0:
+        return lr * 0.25
     else:
-        decayed_lr = lr
-    return decayed_lr
-
-
-def finetune_lr_schedule(epoch, lr):
-    """
-    Learning rate schedule for the second stage of the training scheme.
-    """
-    if epoch % 4 == 0 and epoch != 0:
-        decayed_lr = lr * .94
-    else:
-        decayed_lr = lr
-    return decayed_lr
+        return lr

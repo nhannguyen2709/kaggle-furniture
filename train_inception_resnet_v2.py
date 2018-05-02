@@ -9,7 +9,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, GlobalMaxPooling2D
-from keras.models import Model
+from keras.models import load_model
 from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
@@ -35,8 +35,8 @@ for val_index, minival_index in sss.split(x_from_val_images, y_from_val_images):
 
 # 5-fold cross-validation
 input_shape = (299, 299)
-batch_size = 16
-epochs = 8
+batch_size = 8
+epochs = 7
 num_workers = 4
 n_splits = 5
 n_repeats = 1
@@ -73,7 +73,7 @@ for train_index, test_index in rskf.split(
     # # multi-gpu train
     # base_model = build_inception_resnet_v2()
     # # if os.path.exists(filepath):
-    # #     base_model.load_model(filepath)
+    # #    base_model = load_model(filepath)
     # base_model.compile(optimizer=Adam(lr=1e-3),
     #                    loss='categorical_crossentropy',
     #                    metrics=['acc'])
@@ -86,6 +86,7 @@ for train_index, test_index in rskf.split(
     #                              workers=num_workers)   
     
     # del train_generator, valid_generator
+    # gc.collect()
     
     # print('Found {} images belonging to {} classes'.format(len(x_from_val_images), 128))
     # print('Found {} images belonging to {} classes'.format(len(x_from_minival_images), 128))
@@ -109,26 +110,38 @@ for train_index, test_index in rskf.split(
     #                    metrics=['acc'])
     # parallel_model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['acc'])
     # parallel_model.fit_generator(generator=val_generator,
-    #                              epochs=epochs,
+    #                              epochs=10,
     #                              callbacks=callbacks,
     #                              validation_data=minival_generator,
     #                              workers=num_workers)
 
     # single-gpu train
-    model = build_inception_resnet_v2()
-    # if os.path.exists(filepath):
-    #     model.load_model(filepath)
-    model.compile(optimizer=Adam(lr=1e-3),
+    if os.path.exists(trainval_filepath):
+        model = load_model(trainval_filepath)
+        for i in range(1, 31):
+            model.layers[-i].trainable = True
+        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr)*0.5),
+                      loss='categorical_crossentropy',
+                      metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                        epochs=epochs,
+                        steps_per_epoch=100,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+    else:
+        model = build_inception_resnet_v2()
+        model.compile(optimizer=Adam(lr=1e-3),
                   loss='categorical_crossentropy',
-                  metrics=['acc'])
-    model.fit_generator(generator=train_generator,
+                  metrics=['acc'])            
+        model.fit_generator(generator=train_generator,
                         epochs=epochs,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
 
     del train_generator, valid_generator
-
+    gc.collect()
     print('Found {} images belonging to {} classes'.format(len(x_from_val_images), 128))
     print('Found {} images belonging to {} classes'.format(len(x_from_minival_images), 128))
     val_generator = FurnituresDatasetWithAugmentation(
@@ -145,11 +158,14 @@ for train_index, test_index in rskf.split(
         save_best_only=True,
         mode='max')
     callbacks = [valminival_lr_scheduler, save_best_valminival]
-    model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['acc'])
+    if os.path.exists(valminival_filepath):
+        model = load_model(valminival_filepath)
+    else:
+        model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['acc'])
     model.fit_generator(generator=val_generator,
-                          epochs=epochs,
-                          callbacks=callbacks,
-                          validation_data=minival_generator,
-                          workers=num_workers)
+                        epochs=10,
+                        callbacks=callbacks,
+                        validation_data=minival_generator,
+                        workers=num_workers)
 
     K.clear_session()

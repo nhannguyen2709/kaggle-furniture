@@ -69,14 +69,23 @@ for train_index, test_index in rskf.split(
     callbacks = [save_best_trainval]
     print('Train the last Dense layer')
     
-    model = build_xception()
-    model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                  metrics=['acc'])
-    model.fit_generator(generator=train_generator,
-                        epochs=5,
-                        callbacks=callbacks,
-                        validation_data=valid_generator,
-                        workers=num_workers)
+    if fold!= 1:
+        model = build_xception()
+        model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
+                    metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=3,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+
+        K.clear_session()
+        model = load_model(trainval_filepath)
+        model.fit_generator(generator=train_generator,
+                            epochs=3,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
 
     print("\nFine-tune block 13 and block 14's layers")
     K.clear_session()
@@ -87,11 +96,28 @@ for train_index, test_index in rskf.split(
         np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
     print('Trainable params: {:,}'.format(trainable_count))
     
-    model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+    if fold != 1:
+        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
+                    loss='categorical_crossentropy',
+                    metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=3,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+
+        K.clear_session()
+        model = load_model(trainval_filepath)
+        model.fit_generator(generator=train_generator,
+                            epochs=3,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+    
+    K.clear_session()
+    model = load_model(trainval_filepath)
     model.fit_generator(generator=train_generator,
-                        epochs=5,
+                        epochs=3,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
@@ -99,7 +125,7 @@ for train_index, test_index in rskf.split(
     K.clear_session()
     model = load_model(trainval_filepath)
     model.fit_generator(generator=train_generator,
-                        epochs=5,
+                        epochs=3,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
@@ -107,7 +133,39 @@ for train_index, test_index in rskf.split(
     K.clear_session()
     model = load_model(trainval_filepath)
     model.fit_generator(generator=train_generator,
-                        epochs=5,
+                        epochs=3,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+
+    K.clear_session()
+    model = load_model(trainval_filepath)
+    model.fit_generator(generator=train_generator,
+                        epochs=3,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+
+    K.clear_session()
+    model = load_model(trainval_filepath)
+    model.fit_generator(generator=train_generator,
+                        epochs=3,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+                                                                                                        
+    K.clear_session()
+    model = load_model(trainval_filepath)
+    model.fit_generator(generator=train_generator,
+                        epochs=3,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+
+    K.clear_session()
+    model = load_model(trainval_filepath)
+    model.fit_generator(generator=train_generator,
+                        epochs=3,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
@@ -140,7 +198,7 @@ for train_index, test_index in rskf.split(
     callbacks = [save_best_valminival]
     model = load_model(trainval_filepath)
     model.fit_generator(generator=val_generator,
-                        epochs=5,
+                        epochs=3,
                         callbacks=callbacks,
                         validation_data=minival_generator,
                         workers=num_workers)
@@ -148,7 +206,15 @@ for train_index, test_index in rskf.split(
     K.clear_session()
     model = load_model(trainval_filepath)
     model.fit_generator(generator=val_generator,
-                        epochs=5,
+                        epochs=3,
+                        callbacks=callbacks,
+                        validation_data=minival_generator,
+                        workers=num_workers)
+
+    K.clear_session()
+    model = load_model(trainval_filepath)
+    model.fit_generator(generator=val_generator,
+                        epochs=3,
                         callbacks=callbacks,
                         validation_data=minival_generator,
                         workers=num_workers)
