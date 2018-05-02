@@ -28,6 +28,7 @@ def create_train_and_val_folders():
         os.makedirs('data/validation')
     for label_idx in labels_idxs:
         shutil.rmtree(os.path.join('data/train', str(label_idx)))
+        shutil.rmtree(os.path.join('data/validation', str(label_idx)))
         os.makedirs(os.path.join('data/train', str(label_idx)))
         os.makedirs(os.path.join('data/validation', str(label_idx)))
 
@@ -70,4 +71,5 @@ def crop_and_save_imgs(percent_cropped=0.1):
             cv2.imwrite(img_file_path, img_arr)
 
 if __name__=='__main__':
+    create_train_and_val_folders()
     crop_and_save_imgs(0.1)
