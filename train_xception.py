@@ -114,9 +114,6 @@ for train_index, test_index in rskf.split(
 
         print('\nFine-tune on the validation set')
         K.clear_session()
-        del train_generator, valid_generator
-        gc.collect()
-
         print(
             'Found {} images belonging to {} classes'.format(
                 len(x_from_val_images),
