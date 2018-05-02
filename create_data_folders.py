@@ -70,4 +70,5 @@ def crop_and_save_imgs(percent_cropped=0.1):
             cv2.imwrite(img_file_path, img_arr)
 
 if __name__=='__main__':
+    create_train_and_val_folders()
     crop_and_save_imgs(0.1)
