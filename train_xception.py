@@ -46,107 +46,111 @@ fold = 0
 for train_index, test_index in rskf.split(
         x_from_train_images, y_from_train_images):
     fold += 1
+    if fold == 1:
+        pass
+    else:
+        x_train, x_valid = x_from_train_images[train_index], x_from_train_images[test_index]
+        y_train, y_valid = y_from_train_images[train_index], y_from_train_images[test_index]
+        print('\nFold {}'.format(fold))
+        print('Found {} images belonging to {} classes'.format(len(x_train), 128))
+        print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
+        train_generator = FurnituresDatasetWithAugmentation(
+            x_train, y_train,
+            batch_size=batch_size, input_shape=input_shape)
+        valid_generator = FurnituresDatasetNoAugmentation(
+            x_valid, y_valid,
+            batch_size=batch_size, input_shape=input_shape)
 
-    x_train, x_valid = x_from_train_images[train_index], x_from_train_images[test_index]
-    y_train, y_valid = y_from_train_images[train_index], y_from_train_images[test_index]
-    print('\nFold {}'.format(fold))
-    print('Found {} images belonging to {} classes'.format(len(x_train), 128))
-    print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
-    train_generator = FurnituresDatasetWithAugmentation(
-        x_train, y_train,
-        batch_size=batch_size, input_shape=input_shape)
-    valid_generator = FurnituresDatasetNoAugmentation(
-        x_valid, y_valid,
-        batch_size=batch_size, input_shape=input_shape)
-
-    trainval_filepath = 'checkpoint/xception/trainval.fold{}.best.hdf5'.format(
-        fold)
-    save_best_trainval = ExponentialMovingAverage(filepath=trainval_filepath,
-                                                  verbose=1,
-                                                  monitor='val_acc',
-                                                  save_best_only=True,
-                                                  mode='max')
-    callbacks = [save_best_trainval]
-    print('Train the last Dense layer')
-    model = build_xception()
-    model.compile(optimizer=Adam(lr=1e-3, decay=0.01), loss='categorical_crossentropy',
-                  metrics=['acc'])
-    model.fit_generator(generator=train_generator,
-                        epochs=5,
-                        callbacks=callbacks,
-                        validation_data=valid_generator,
-                        workers=num_workers)
-
-    print("\nFine-tune block 13 and block 14's layers")
-    K.clear_session()
-    model = load_model(trainval_filepath)
-    for i in range(1, 19):
-        model.layers[-i].trainable = True
-    trainable_count = int(
-        np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
-    print('Trainable params: {:,}'.format(trainable_count))
-    model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=0.01),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
-    model.fit_generator(generator=train_generator,
-                        epochs=5,
-                        callbacks=callbacks,
-                        validation_data=valid_generator,
-                        workers=num_workers)
-
-    K.clear_session()
-    model = load_model(trainval_filepath)
-    model.fit_generator(generator=train_generator,
-                        epochs=5,
-                        callbacks=callbacks,
-                        validation_data=valid_generator,
-                        workers=num_workers)
-
-    K.clear_session()
-    model = load_model(trainval_filepath)
-    model.fit_generator(generator=train_generator,
-                        epochs=5,
-                        callbacks=callbacks,
-                        validation_data=valid_generator,
-                        workers=num_workers)
-
-    print('\nFine-tune on the validation set')
-    K.clear_session()
-    del train_generator, valid_generator
-    gc.collect()
-
-    print(
-        'Found {} images belonging to {} classes'.format(
-            len(x_from_val_images),
-            128))
-    print(
-        'Found {} images belonging to {} classes'.format(
-            len(x_from_minival_images),
-            128))
-    val_generator = FurnituresDatasetWithAugmentation(
-        x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
-    minival_generator = FurnituresDatasetNoAugmentation(
-        x_from_minival_images, y_from_minival_images,
-        batch_size=batch_size, input_shape=input_shape)
-    valminival_filepath = 'checkpoint/xception/valminival.fold{}.best.hdf5'.format(
-        fold)
-    save_best_valminival = ExponentialMovingAverage(filepath=valminival_filepath,
+        trainval_filepath = 'checkpoint/xception/trainval.fold{}.best.hdf5'.format(
+            fold)
+        save_best_trainval = ExponentialMovingAverage(filepath=trainval_filepath,
                                                     verbose=1,
                                                     monitor='val_acc',
                                                     save_best_only=True,
                                                     mode='max')
-    callbacks = [save_best_valminival]
-    model = load_model(trainval_filepath)
-    model.fit_generator(generator=val_generator,
-                        epochs=5,
-                        callbacks=callbacks,
-                        validation_data=minival_generator,
-                        workers=num_workers)
+        callbacks = [save_best_trainval]
+        print('Train the last Dense layer')
+        model = build_xception()
+        model.compile(optimizer=Adam(lr=1e-3, decay=0.01), loss='categorical_crossentropy',
+                    metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=5,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
 
-    K.clear_session()
-    model = load_model(trainval_filepath)
-    model.fit_generator(generator=val_generator,
-                        epochs=5,
-                        callbacks=callbacks,
-                        validation_data=minival_generator,
-                        workers=num_workers)
+        print("\nFine-tune block 13 and block 14's layers")
+        K.clear_session()
+        model = load_model(trainval_filepath)
+        for i in range(1, 19):
+            model.layers[-i].trainable = True
+        trainable_count = int(
+            np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
+        print('Trainable params: {:,}'.format(trainable_count))
+        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=0.01),
+                    loss='categorical_crossentropy',
+                    metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=5,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+
+        K.clear_session()
+        model = load_model(trainval_filepath)
+        model.fit_generator(generator=train_generator,
+                            epochs=5,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+
+        K.clear_session()
+        model = load_model(trainval_filepath)
+        model.fit_generator(generator=train_generator,
+                            epochs=5,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+
+        print('\nFine-tune on the validation set')
+        K.clear_session()
+        del train_generator, valid_generator
+        gc.collect()
+
+        print(
+            'Found {} images belonging to {} classes'.format(
+                len(x_from_val_images),
+                128))
+        print(
+            'Found {} images belonging to {} classes'.format(
+                len(x_from_minival_images),
+                128))
+        val_generator = FurnituresDatasetWithAugmentation(
+            x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
+        minival_generator = FurnituresDatasetNoAugmentation(
+            x_from_minival_images, y_from_minival_images,
+            batch_size=batch_size, input_shape=input_shape)
+        valminival_filepath = 'checkpoint/xception/valminival.fold{}.best.hdf5'.format(
+            fold)
+        save_best_valminival = ExponentialMovingAverage(filepath=valminival_filepath,
+                                                        verbose=1,
+                                                        monitor='val_acc',
+                                                        save_best_only=True,
+                                                        mode='max')
+        callbacks = [save_best_valminival]
+        model = load_model(trainval_filepath)
+        model.fit_generator(generator=val_generator,
+                            epochs=5,
+                            callbacks=callbacks,
+                            validation_data=minival_generator,
+                            workers=num_workers)
+
+        K.clear_session()
+        model = load_model(trainval_filepath)
+        model.fit_generator(generator=val_generator,
+                            epochs=5,
+                            callbacks=callbacks,
+                            validation_data=minival_generator,
+                            workers=num_workers)
+        
+        K.clear_session()
