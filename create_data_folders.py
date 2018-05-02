@@ -28,6 +28,7 @@ def create_train_and_val_folders():
         os.makedirs('data/validation')
     for label_idx in labels_idxs:
         shutil.rmtree(os.path.join('data/train', str(label_idx)))
+        shutil.rmtree(os.path.join('data/validation', str(label_idx)))
         os.makedirs(os.path.join('data/train', str(label_idx)))
         os.makedirs(os.path.join('data/validation', str(label_idx)))
 
