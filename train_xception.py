@@ -8,15 +8,12 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import load_model
 from keras.optimizers import Adam
-from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 from sklearn.utils import shuffle
 
 from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
-from keras_EMA import ExponentialMovingAverage
 from utils import build_xception, get_image_paths_and_labels, MultiGPUModel
 
 
@@ -35,10 +32,9 @@ for val_index, minival_index in sss.split(
 
 input_shape = (299, 299)
 batch_size = 16
-num_workers = 8
-n_splits = 3
+num_workers = 4
+n_splits = 5
 n_repeats = 1
-num_gpus = 2
 rskf = RepeatedStratifiedKFold(
     n_splits=n_splits, n_repeats=n_repeats, random_state=4)
 
@@ -63,16 +59,16 @@ for train_index, test_index in rskf.split(
 
         trainval_filepath = 'checkpoint/xception/trainval.fold{}.best.hdf5'.format(
             fold)
-        save_best_trainval = ExponentialMovingAverage(filepath=trainval_filepath,
-                                                    verbose=1,
-                                                    monitor='val_acc',
-                                                    save_best_only=True,
-                                                    mode='max')
+        save_best_trainval = ModelCheckpoint(filepath=trainval_filepath,
+                                             verbose=1,
+                                             monitor='val_acc',
+                                             save_best_only=True,
+                                             mode='max')
         callbacks = [save_best_trainval]
         print('Train the last Dense layer')
         model = build_xception()
         model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                    metrics=['acc'])
+                      metrics=['acc'])
         model.fit_generator(generator=train_generator,
                             epochs=5,
                             callbacks=callbacks,
@@ -82,32 +78,16 @@ for train_index, test_index in rskf.split(
         print("\nFine-tune block 13 and block 14's layers")
         K.clear_session()
         model = load_model(trainval_filepath)
-        for i in range(1, 19):
+        for i in range(1, 22):
             model.layers[-i].trainable = True
         trainable_count = int(
             np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
         print('Trainable params: {:,}'.format(trainable_count))
         model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                    loss='categorical_crossentropy',
-                    metrics=['acc'])
+                      loss='categorical_crossentropy',
+                      metrics=['acc'])
         model.fit_generator(generator=train_generator,
-                            epochs=5,
-                            callbacks=callbacks,
-                            validation_data=valid_generator,
-                            workers=num_workers)
-
-        K.clear_session()
-        model = load_model(trainval_filepath)
-        model.fit_generator(generator=train_generator,
-                            epochs=5,
-                            callbacks=callbacks,
-                            validation_data=valid_generator,
-                            workers=num_workers)
-
-        K.clear_session()
-        model = load_model(trainval_filepath)
-        model.fit_generator(generator=train_generator,
-                            epochs=5,
+                            epochs=25,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             workers=num_workers)
@@ -129,25 +109,20 @@ for train_index, test_index in rskf.split(
             batch_size=batch_size, input_shape=input_shape)
         valminival_filepath = 'checkpoint/xception/valminival.fold{}.best.hdf5'.format(
             fold)
-        save_best_valminival = ExponentialMovingAverage(filepath=valminival_filepath,
-                                                        verbose=1,
-                                                        monitor='val_acc',
-                                                        save_best_only=True,
-                                                        mode='max')
+        save_best_valminival = ModelCheckpoint(filepath=valminival_filepath,
+                                               verbose=1,
+                                               monitor='val_acc',
+                                               save_best_only=True,
+                                               mode='max')
         callbacks = [save_best_valminival]
         model = load_model(trainval_filepath)
+        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
+                      loss='categorical_crossentropy',
+                      metrics=['acc'])
         model.fit_generator(generator=val_generator,
-                            epochs=5,
+                            epochs=10,
                             callbacks=callbacks,
                             validation_data=minival_generator,
                             workers=num_workers)
 
-        K.clear_session()
-        model = load_model(trainval_filepath)
-        model.fit_generator(generator=val_generator,
-                            epochs=5,
-                            callbacks=callbacks,
-                            validation_data=minival_generator,
-                            workers=num_workers)
-        
         K.clear_session()
