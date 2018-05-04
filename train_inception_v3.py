@@ -8,10 +8,8 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import load_model
 from keras.optimizers import Adam
-from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 from sklearn.utils import shuffle
 
