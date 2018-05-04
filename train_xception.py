@@ -41,7 +41,7 @@ rskf = RepeatedStratifiedKFold(
 fold = 0
 for train_index, test_index in rskf.split(
         x_from_train_images, y_from_train_images):
-
+    fold += 1
     x_train, x_valid = x_from_train_images[train_index], x_from_train_images[test_index]
     y_train, y_valid = y_from_train_images[train_index], y_from_train_images[test_index]
     print('\nFold {}'.format(fold))
