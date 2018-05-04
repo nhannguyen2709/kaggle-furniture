@@ -98,7 +98,7 @@ def build_xception():
     model = Xception(include_top=False, pooling='avg')
     max_pool = GlobalMaxPooling2D()(model.layers[-2].output)
     global_pool = Concatenate()([max_pool, model.layers[-1].output])
-    global_pool = Dropout(0.6)(global_pool)
+    global_pool = Dropout(0.5)(global_pool)
     output = Dense(128, activation='softmax', name='predictions')(global_pool)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = ['predictions']
