@@ -28,7 +28,7 @@ for fold in folds:
     x = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
     x = Dense(128, activation='softmax', name='predictions')(x)
     model = Model(inputs=model.layers[0].input, outputs=x)
-    model.load_weights('checkpoint/inception_v3/valminival.{}.best.hdf5'.format(fold))
+    model.load_weights('checkpoint/inception_v3/trainval.{}.best.hdf5'.format(fold))
     fold_pred = model.predict_generator(generator=test_generator, workers=num_workers, verbose=1) 
     predictions.append(fold_pred)
 
