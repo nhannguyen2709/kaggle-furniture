@@ -5,7 +5,7 @@ from keras.applications.inception_v3 import InceptionV3
 from keras.applications.densenet import DenseNet201
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from keras.applications.xception import Xception
-from keras.layers import Dense, Dropout, GlobalMaxPooling2D
+from keras.layers import Concatenate, Dense, Dropout, GlobalMaxPooling2D
 from keras.models import Model
 from keras.optimizers import Adam, SGD
 from keras.preprocessing.image import ImageDataGenerator
@@ -96,7 +96,10 @@ def build_inception_resnet_v2():
 
 def build_xception():
     model = Xception(include_top=False, pooling='avg')
-    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
+    max_pool = GlobalMaxPooling2D()(model.layers[-2].output)
+    global_pool = Concatenate()([max_pool, model.layers[-1].output])
+    global_pool = Dropout(0.6)(global_pool)
+    output = Dense(128, activation='softmax', name='predictions')(global_pool)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = ['predictions']
     finetuned_layers = [model.get_layer(name=layer_name) 
