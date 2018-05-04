@@ -10,7 +10,7 @@ from keras.preprocessing.image import ImageDataGenerator
 test_dir = 'data/test'
 num_workers = 4
 submit_dir = 'submission/inception_v3'
-submit_filename = 'avg_5_folds.csv'
+submit_filename = 'avg_3_folds.csv'
 
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
@@ -21,14 +21,14 @@ test_generator = test_datagen.flow_from_directory(
     class_mode='categorical',
     shuffle=False)
 
-folds = ['fold1', 'fold2', 'fold3', 'fold4', 'fold5']
+folds = ['fold1', 'fold2', 'fold3']
 predictions = []
 for fold in folds:
     model = InceptionV3(include_top=False)
     x = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
     x = Dense(128, activation='softmax', name='predictions')(x)
     model = Model(inputs=model.layers[0].input, outputs=x)
-    model.load_weights('checkpoint/inception_v3/{}.weights.best.hdf5'.format(fold))
+    model.load_weights('checkpoint/inception_v3/valminival.{}.best.hdf5'.format(fold))
     fold_pred = model.predict_generator(generator=test_generator, workers=num_workers, verbose=1) 
     predictions.append(fold_pred)
 
