@@ -31,7 +31,7 @@ for val_index, minival_index in sss.split(
         val_index], y_from_val_images[val_index]
 
 input_shape = (299, 299)
-batch_size = 16
+batch_size = 32
 num_workers = 4
 n_splits = 5
 n_repeats = 1
