@@ -1,6 +1,8 @@
-import cv2
 from imgaug import augmenters as iaa
+import cv2
+import numpy as np 
 import os
+from PIL import Image  
 import shutil
 from tqdm import tqdm
 
@@ -71,6 +73,21 @@ def crop_and_save_imgs(percent_cropped=0.1):
             cv2.imwrite(img_file_path, img_arr)
 
 
+def convert_test_files_to_rgb(test_dir):
+    num_test_samples = 12800  # test dataset
+    for i in range(num_test_samples): 
+        filename =test_dir + str(i+1) + ".jpg" 
+        if not os.path.exists(filename):  
+            print("Don't exist image ", i+1)  
+            continue  
+        with Image.open(filename) as image:  
+            img = np.array(image)  
+            if len(img.shape) != 3 or img.shape[2] != 3:  
+                rgb_image = image.convert('RGB')  
+                rgb_image.save(filename)  
+                print("Transform succesfully image ", i+1)
+
+
 def preprocess_test_imgs(percent_cropped=0.1):
     for img_fname in tqdm(sorted(os.listdir('data/test/test12695'))):
         img_fpath = os.path.join('data/test/test12695', img_fname)
@@ -86,59 +103,59 @@ def preprocess_test_imgs(percent_cropped=0.1):
         img_bottom_right_flip_fpath = os.path.join('data/test/test12695_bottom_right_flip/test12695_bottom_right_flip', img_fname)
         img_bottom_left_flip_fpath = os.path.join('data/test/test12695_bottom_left_flip/test12695_bottom_left_flip', img_fname)
         img_center_flip_fpath = os.path.join('data/test/test12695_center_flip/test12695_center_flip', img_fname)
-        try:
-            img_arr = cv2.imread(img_fpath)
-            flip_img_arr = iaa.Fliplr(1.0).augment_image(img_arr)
-            cv2.imwrite(img_flip_fpath, flip_img_arr)
 
-            mod_img_arr = iaa.Crop(px=(int(percent_cropped*img_arr.shape[0]),
-                                        int(percent_cropped*img_arr.shape[1]),
-                                        0,
-                                        0),
-                                    keep_size=False).augment_image(img_arr)
-            cv2.imwrite(img_top_right_fpath, mod_img_arr)
-            mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
-            cv2.imwrite(img_top_right_flip_fpath, mod_img_arr)
+        img_arr = cv2.imread(img_fpath)
+        flip_img_arr = iaa.Fliplr(1.0).augment_image(img_arr)
+        cv2.imwrite(img_flip_fpath, flip_img_arr)
 
-            mod_img_arr = iaa.Crop(px=(int(percent_cropped*img_arr.shape[0]),
-                                        0,
-                                        0,
-                                        int(percent_cropped*img_arr.shape[1])),
-                                    keep_size=False).augment_image(img_arr)
-            cv2.imwrite(img_top_left_fpath, mod_img_arr)
-            mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
-            cv2.imwrite(img_top_left_flip_fpath, mod_img_arr)
-
-            mod_img_arr = iaa.Crop(px=(0,
+        mod_img_arr = iaa.Crop(px=(int(percent_cropped*img_arr.shape[0]),
                                     int(percent_cropped*img_arr.shape[1]),
-                                    int(percent_cropped*img_arr.shape[0]),
+                                    0,
                                     0),
                                 keep_size=False).augment_image(img_arr)
-            cv2.imwrite(img_bottom_right_fpath, mod_img_arr)
-            mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
-            cv2.imwrite(img_bottom_right_flip_fpath, mod_img_arr)
+        cv2.imwrite(img_top_right_fpath, mod_img_arr)
+        mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
+        cv2.imwrite(img_top_right_flip_fpath, mod_img_arr)
 
-            mod_img_arr = iaa.Crop(px=(0,
+        mod_img_arr = iaa.Crop(px=(int(percent_cropped*img_arr.shape[0]),
                                     0,
-                                    int(percent_cropped*img_arr.shape[0]),
+                                    0,
                                     int(percent_cropped*img_arr.shape[1])),
                                 keep_size=False).augment_image(img_arr)
-            cv2.imwrite(img_bottom_left_fpath, mod_img_arr)
-            mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
-            cv2.imwrite(img_bottom_left_flip_fpath, mod_img_arr)
+        cv2.imwrite(img_top_left_fpath, mod_img_arr)
+        mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
+        cv2.imwrite(img_top_left_flip_fpath, mod_img_arr)
 
-            mod_img_arr = iaa.Crop(px=(int(percent_cropped*img_arr.shape[0]),
-                                    int(percent_cropped*img_arr.shape[1]),
-                                    int(percent_cropped*img_arr.shape[0]),
-                                    int(percent_cropped*img_arr.shape[1])),
-                                keep_size=False).augment_image(img_arr)
-            cv2.imwrite(img_center_fpath, mod_img_arr)
-            mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
-            cv2.imwrite(img_center_flip_fpath, mod_img_arr)
-        except:
-            print(img_fpath)
+        mod_img_arr = iaa.Crop(px=(0,
+                                   int(percent_cropped*img_arr.shape[1]),
+                                   int(percent_cropped*img_arr.shape[0]),
+                                   0),
+                               keep_size=False).augment_image(img_arr)
+        cv2.imwrite(img_bottom_right_fpath, mod_img_arr)
+        mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
+        cv2.imwrite(img_bottom_right_flip_fpath, mod_img_arr)
+
+        mod_img_arr = iaa.Crop(px=(0,
+                                   0,
+                                   int(percent_cropped*img_arr.shape[0]),
+                                   int(percent_cropped*img_arr.shape[1])),
+                               keep_size=False).augment_image(img_arr)
+        cv2.imwrite(img_bottom_left_fpath, mod_img_arr)
+        mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
+        cv2.imwrite(img_bottom_left_flip_fpath, mod_img_arr)
+
+        mod_img_arr = iaa.Crop(px=(int(percent_cropped*img_arr.shape[0]),
+                                   int(percent_cropped*img_arr.shape[1]),
+                                   int(percent_cropped*img_arr.shape[0]),
+                                   int(percent_cropped*img_arr.shape[1])),
+                               keep_size=False).augment_image(img_arr)
+        cv2.imwrite(img_center_fpath, mod_img_arr)
+        mod_img_arr = iaa.Fliplr(1.0).augment_image(mod_img_arr)
+        cv2.imwrite(img_center_flip_fpath, mod_img_arr)
+
 
 if __name__=='__main__':
     # create_train_and_val_folders()
     # crop_and_save_imgs(0.1)
+    convert_test_files_to_rgb('data/test/test12695/')
     preprocess_test_imgs()
