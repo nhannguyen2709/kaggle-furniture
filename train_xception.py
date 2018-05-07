@@ -42,7 +42,7 @@ fold = 0
 for train_index, test_index in rskf.split(
         x_from_train_images, y_from_train_images):
     fold += 1
-
+    
     x_train, x_valid = x_from_train_images[train_index], x_from_train_images[test_index]
     y_train, y_valid = y_from_train_images[train_index], y_from_train_images[test_index]
     print('\nFold {}'.format(fold))
@@ -58,15 +58,15 @@ for train_index, test_index in rskf.split(
     trainval_filepath = 'checkpoint/xception/trainval.fold{}.best.hdf5'.format(
         fold)
     save_best_trainval = ModelCheckpoint(filepath=trainval_filepath,
-                                        verbose=1,
-                                        monitor='val_acc',
-                                        save_best_only=True,
-                                        mode='max')
+                                         verbose=1,
+                                         monitor='val_acc',
+                                         save_best_only=True,
+                                         mode='max')
     callbacks = [save_best_trainval]
     print('Train the last Dense layer')
     model = build_xception()
     model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                metrics=['acc'])
+                  metrics=['acc'])
     model.fit_generator(generator=train_generator,
                         epochs=5,
                         callbacks=callbacks,
@@ -82,8 +82,8 @@ for train_index, test_index in rskf.split(
         np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
     print('Trainable params: {:,}'.format(trainable_count))
     model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                loss='categorical_crossentropy',
-                metrics=['acc'])
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
     model.fit_generator(generator=train_generator,
                         epochs=25,
                         callbacks=callbacks,
@@ -108,15 +108,15 @@ for train_index, test_index in rskf.split(
     valminival_filepath = 'checkpoint/xception/valminival.fold{}.best.hdf5'.format(
         fold)
     save_best_valminival = ModelCheckpoint(filepath=valminival_filepath,
-                                        verbose=1,
-                                        monitor='val_acc',
-                                        save_best_only=True,
-                                        mode='max')
+                                           verbose=1,
+                                           monitor='val_acc',
+                                           save_best_only=True,
+                                           mode='max')
     callbacks = [save_best_valminival]
     model = load_model(trainval_filepath)
     model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                loss='categorical_crossentropy',
-                metrics=['acc'])
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
     model.fit_generator(generator=val_generator,
                         epochs=10,
                         callbacks=callbacks,
