@@ -26,8 +26,6 @@ def ParseData(data_file):
   return key_url_list
 
 
-
-
 def DownloadImage(key_url):
   out_dir = sys.argv[2]
   (key, url) = key_url
@@ -69,7 +67,7 @@ def Run():
   if len(sys.argv) != 3:
     print('Syntax: %s <train|validation|test.json> <output_dir/>' % sys.argv[0])
     sys.exit(0)
-  (data_file, out_dir) = sys.argv[1:]
+    (data_file, out_dir) = sys.argv[1:]
 
   if not os.path.exists(out_dir):
     os.mkdir(out_dir)
