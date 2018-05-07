@@ -89,20 +89,20 @@ def convert_test_files_to_rgb(test_dir):
 
 
 def preprocess_test_imgs(percent_cropped=0.1):
-    for img_fname in tqdm(sorted(os.listdir('data/test/test12695'))):
-        img_fpath = os.path.join('data/test/test12695', img_fname)
-        img_top_right_fpath = os.path.join('data/test/test12695_top_right/test12695_top_right', img_fname)
-        img_top_left_fpath = os.path.join('data/test/test12695_top_left/test12695_top_left', img_fname)
-        img_bottom_right_fpath = os.path.join('data/test/test12695_bottom_right/test12695_bottom_right', img_fname)
-        img_bottom_left_fpath = os.path.join('data/test/test12695_bottom_left/test12695_bottom_left', img_fname)
-        img_center_fpath = os.path.join('data/test/test12695_center/test12695_center', img_fname)
+    for img_fname in tqdm(sorted(os.listdir('data/test/test12703'))):
+        img_fpath = os.path.join('data/test/test12703', img_fname)
+        img_top_right_fpath = os.path.join('data/test/test12703_top_right/test12703_top_right', img_fname)
+        img_top_left_fpath = os.path.join('data/test/test12703_top_left/test12703_top_left', img_fname)
+        img_bottom_right_fpath = os.path.join('data/test/test12703_bottom_right/test12703_bottom_right', img_fname)
+        img_bottom_left_fpath = os.path.join('data/test/test12703_bottom_left/test12703_bottom_left', img_fname)
+        img_center_fpath = os.path.join('data/test/test12703_center/test12703_center', img_fname)
 
-        img_flip_fpath = os.path.join('data/test/test12695_flip/test12695_flip', img_fname)
-        img_top_right_flip_fpath = os.path.join('data/test/test12695_top_right_flip/test12695_top_right_flip', img_fname)
-        img_top_left_flip_fpath = os.path.join('data/test/test12695_top_left_flip/test12695_top_left_flip', img_fname)
-        img_bottom_right_flip_fpath = os.path.join('data/test/test12695_bottom_right_flip/test12695_bottom_right_flip', img_fname)
-        img_bottom_left_flip_fpath = os.path.join('data/test/test12695_bottom_left_flip/test12695_bottom_left_flip', img_fname)
-        img_center_flip_fpath = os.path.join('data/test/test12695_center_flip/test12695_center_flip', img_fname)
+        img_flip_fpath = os.path.join('data/test/test12703_flip/test12703_flip', img_fname)
+        img_top_right_flip_fpath = os.path.join('data/test/test12703_top_right_flip/test12703_top_right_flip', img_fname)
+        img_top_left_flip_fpath = os.path.join('data/test/test12703_top_left_flip/test12703_top_left_flip', img_fname)
+        img_bottom_right_flip_fpath = os.path.join('data/test/test12703_bottom_right_flip/test12703_bottom_right_flip', img_fname)
+        img_bottom_left_flip_fpath = os.path.join('data/test/test12703_bottom_left_flip/test12703_bottom_left_flip', img_fname)
+        img_center_flip_fpath = os.path.join('data/test/test12703_center_flip/test12703_center_flip', img_fname)
 
         img_arr = cv2.imread(img_fpath)
         flip_img_arr = iaa.Fliplr(1.0).augment_image(img_arr)
@@ -157,5 +157,5 @@ def preprocess_test_imgs(percent_cropped=0.1):
 if __name__=='__main__':
     # create_train_and_val_folders()
     # crop_and_save_imgs(0.1)
-    convert_test_files_to_rgb('data/test/test12695/')
+    convert_test_files_to_rgb('data/test/test12703/')
     preprocess_test_imgs()
