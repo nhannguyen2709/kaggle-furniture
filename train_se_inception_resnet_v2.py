@@ -33,7 +33,7 @@ for val_index, minival_index in sss.split(
 input_shape = (299, 299)
 batch_size = 32
 num_workers = 4
-n_splits = 3
+n_splits = 5
 n_repeats = 1
 rskf = RepeatedStratifiedKFold(
     n_splits=n_splits, n_repeats=n_repeats, random_state=2)
@@ -67,7 +67,7 @@ for train_index, test_index in rskf.split(
     model.compile(optimizer=Adam(lr=1e-2, decay=1e-6), loss='categorical_crossentropy',
                   metrics=['acc'])
     model.fit_generator(generator=train_generator,
-                        epochs=10,
+                        epochs=20,
                         callbacks=callbacks,
                         validation_data=valid_generator,
                         workers=num_workers)
@@ -82,10 +82,10 @@ for train_index, test_index in rskf.split(
             len(x_from_minival_images),
             128))
     val_generator = FurnituresDatasetWithAugmentation(
-        x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
+        x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=(560, 560))
     minival_generator = FurnituresDatasetNoAugmentation(
         x_from_minival_images, y_from_minival_images,
-        batch_size=batch_size, input_shape=input_shape)
+        batch_size=batch_size, input_shape=(560, 560))
     valminival_filepath = 'checkpoint/se_inception_resnet_v2/valminival.fold{}.best.hdf5'.format(
         fold)
     save_best_valminival = ModelCheckpoint(filepath=valminival_filepath,
