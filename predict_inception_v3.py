@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import os
-from tqdm import tqdm
 
 from keras.applications.inception_v3 import InceptionV3
 from keras.layers import Dense, GlobalMaxPooling2D
@@ -12,7 +11,7 @@ test_folders = sorted(os.listdir('data/test'))
 test_dirs = [os.path.join('data/test', test_folder) for test_folder in test_folders]
 num_workers = 4
 submit_dir = 'submission/inception_v3'
-submit_filename = 'avg_train_finetune.csv'
+submit_filename = 'avg_train_finetune_12_crops.csv'
 
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
@@ -29,7 +28,8 @@ for test_dir in test_dirs:
         class_mode='categorical',
         shuffle=False)
 
-    for fold in tqdm(folds):
+    for fold in folds:
+        print('Model obtained from {} to predict on data {}'.format(fold, test_dir.split('/')[-1]))
         model = InceptionV3(include_top=False)
         x = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
         x = Dense(128, activation='softmax', name='predictions')(x)
