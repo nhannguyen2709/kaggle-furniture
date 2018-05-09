@@ -3,13 +3,13 @@ import pandas as pd
 import os
 
 from keras.applications.inception_v3 import InceptionV3
+from keras.backend import tensorflow_backend as K
 from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
 
 test_folders = sorted(os.listdir('data/test'))
 test_dirs = [os.path.join('data/test', test_folder) for test_folder in test_folders]
-test_dirs = [test_dirs[-1]]
 
 num_workers = 4
 submit_dir = 'submission/inception_v3'
@@ -23,6 +23,7 @@ folds = ['trainval.fold1', 'trainval.fold2', 'trainval.fold3',
 predictions = []
 
 for test_dir in test_dirs:
+    print('\nData {}'.format(test_dir.split('/')[-1]))
     test_generator = test_datagen.flow_from_directory(
         test_dir,
         batch_size=64,
@@ -31,13 +32,14 @@ for test_dir in test_dirs:
         shuffle=False)
 
     for fold in folds:
-        print('Model obtained from {} to predict on data {}'.format(fold, test_dir.split('/')[-1]))
+        print('Model obtained from {}'.format(fold))
         model = InceptionV3(include_top=False)
         x = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
         x = Dense(128, activation='softmax', name='predictions')(x)
         model = Model(inputs=model.layers[0].input, outputs=x)
         model.load_weights('checkpoint/inception_v3/{}.best.hdf5'.format(fold))
         fold_pred = model.predict_generator(generator=test_generator, workers=num_workers, verbose=1) 
+        K.clear_session()
         predictions.append(fold_pred)
 
     del test_generator
