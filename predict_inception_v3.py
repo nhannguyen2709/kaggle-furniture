@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import os
 
+import tensorflow as tf
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
 from keras.applications.inception_v3 import InceptionV3
 from keras.backend import tensorflow_backend as K
 from keras.layers import Dense, GlobalMaxPooling2D
