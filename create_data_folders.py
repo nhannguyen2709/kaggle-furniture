@@ -89,6 +89,21 @@ def convert_test_files_to_rgb(test_dir):
 
 
 def preprocess_test_imgs(test_dir, percent_cropped=0.1):
+    aug_test_paths = ['data/test/test12703_top_right/test12703_top_right',
+                      'data/test/test12703_top_left/test12703_top_left',
+                      'data/test/test12703_bottom_right/test12703_bottom_right',
+                      'data/test/test12703_bottom_left/test12703_bottom_left', 
+                      'data/test/test12703_center/test12703_center', 
+                      'data/test/test12703_flip/test12703_flip', 
+                      'data/test/test12703_top_right_flip/test12703_top_right_flip', 
+                      'data/test/test12703_top_left_flip/test12703_top_left_flip', 
+                      'data/test/test12703_bottom_right_flip/test12703_bottom_right_flip', 
+                      'data/test/test12703_bottom_left_flip/test12703_bottom_left_flip', 
+                      'data/test/test12703_center_flip/test12703_center_flip']
+    for test_path in aug_test_paths:
+        if not os.path.exists(test_path):
+            os.makedirs(test_path)
+            
     for img_fname in tqdm(sorted(os.listdir(test_dir))):
         img_fpath = os.path.join(test_dir, img_fname)
         img_top_right_fpath = os.path.join('data/test/test12703_top_right/test12703_top_right', img_fname)
