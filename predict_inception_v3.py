@@ -43,6 +43,8 @@ for test_dir in test_dirs:
     del test_generator
 
 test_pred = np.mean(np.array(predictions), axis=0)
+del predictions
+np.save('submission/inception_v3/avg_train_finetune_12_crops.npy', test_pred)
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
 
