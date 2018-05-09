@@ -9,6 +9,8 @@ from keras.preprocessing.image import ImageDataGenerator
 
 test_folders = sorted(os.listdir('data/test'))
 test_dirs = [os.path.join('data/test', test_folder) for test_folder in test_folders]
+test_dirs = [test_dirs[-1]]
+
 num_workers = 4
 submit_dir = 'submission/inception_v3'
 submit_filename = 'avg_train_finetune_12_crops.csv'
