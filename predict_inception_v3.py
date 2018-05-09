@@ -55,6 +55,7 @@ test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
 
 # recreate test generator to extract image filenames
+test_dir = test_dirs[-1]
 test_generator = test_datagen.flow_from_directory(
     test_dir,
     batch_size=64,
