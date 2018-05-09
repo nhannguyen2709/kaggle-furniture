@@ -88,9 +88,9 @@ def convert_test_files_to_rgb(test_dir):
                 print("Transform succesfully image ", i+1)
 
 
-def preprocess_test_imgs(percent_cropped=0.1):
-    for img_fname in tqdm(sorted(os.listdir('data/test/test12703'))):
-        img_fpath = os.path.join('data/test/test12703', img_fname)
+def preprocess_test_imgs(test_dir, percent_cropped=0.1):
+    for img_fname in tqdm(sorted(os.listdir(test_dir))):
+        img_fpath = os.path.join(test_dir, img_fname)
         img_top_right_fpath = os.path.join('data/test/test12703_top_right/test12703_top_right', img_fname)
         img_top_left_fpath = os.path.join('data/test/test12703_top_left/test12703_top_left', img_fname)
         img_bottom_right_fpath = os.path.join('data/test/test12703_bottom_right/test12703_bottom_right', img_fname)
@@ -157,5 +157,5 @@ def preprocess_test_imgs(percent_cropped=0.1):
 if __name__=='__main__':
     # create_train_and_val_folders()
     # crop_and_save_imgs(0.1)
-    convert_test_files_to_rgb('data/test/test12703/')
+    convert_test_files_to_rgb('data/test/test12703/test12703')
     preprocess_test_imgs()
