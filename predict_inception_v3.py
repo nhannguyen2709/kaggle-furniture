@@ -21,37 +21,46 @@ submit_filename = 'avg_train_finetune_12_crops.csv'
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
 
-folds = ['trainval.fold1', 'trainval.fold2', 'trainval.fold3',
-         'valminival.fold1', 'valminival.fold2', 'valminival.fold3']
-predictions = []
+# folds = ['trainval.fold1', 'trainval.fold2', 'trainval.fold3',
+#          'valminival.fold1', 'valminival.fold2', 'valminival.fold3']
+# predictions = []
 
-for test_dir in test_dirs:
-    print('\nData {}'.format(test_dir.split('/')[-1]))
-    test_generator = test_datagen.flow_from_directory(
-        test_dir,
-        batch_size=64,
-        target_size=(299, 299),
-        class_mode='categorical',
-        shuffle=False)
+# for test_dir in test_dirs:
+#     print('\nData {}'.format(test_dir.split('/')[-1]))
+#     test_generator = test_datagen.flow_from_directory(
+#         test_dir,
+#         batch_size=64,
+#         target_size=(299, 299),
+#         class_mode='categorical',
+#         shuffle=False)
 
-    for fold in folds:
-        print('Model obtained from {}'.format(fold))
-        model = InceptionV3(include_top=False)
-        x = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
-        x = Dense(128, activation='softmax', name='predictions')(x)
-        model = Model(inputs=model.layers[0].input, outputs=x)
-        model.load_weights('checkpoint/inception_v3/{}.best.hdf5'.format(fold))
-        fold_pred = model.predict_generator(generator=test_generator, workers=num_workers, verbose=1) 
-        K.clear_session()
-        predictions.append(fold_pred)
+#     for fold in folds:
+#         print('Model obtained from {}'.format(fold))
+#         model = InceptionV3(include_top=False)
+#         x = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
+#         x = Dense(128, activation='softmax', name='predictions')(x)
+#         model = Model(inputs=model.layers[0].input, outputs=x)
+#         model.load_weights('checkpoint/inception_v3/{}.best.hdf5'.format(fold))
+#         fold_pred = model.predict_generator(generator=test_generator, workers=num_workers, verbose=1) 
+#         K.clear_session()
+#         predictions.append(fold_pred)
 
-    del test_generator
+#     del test_generator
 
-test_pred = np.mean(np.array(predictions), axis=0)
-del predictions
+# test_pred = np.mean(np.array(predictions), axis=0)
+# del predictions
 np.save('submission/inception_v3/avg_train_finetune_12_crops.npy', test_pred)
+test_pred = np.load('submission/inception_v3/avg_train_finetune_12_crops.npy')
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
+
+# recreate test generator to extract image filenames
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    batch_size=64,
+    target_size=(299, 299),
+    class_mode='categorical',
+    shuffle=False)
 
 my_submit = pd.concat([pd.Series(test_generator.filenames),
                        pd.Series(test_pred)], axis=1)
