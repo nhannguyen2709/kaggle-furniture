@@ -25,8 +25,8 @@ folds = sorted(os.listdir(checkpoint_dir))
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
 
-test_pred = []
-
+test_pred = np.zeros((12703, 128))
+pred_times = 0
 for test_dir in test_dirs:
     print('\nData {}'.format(test_dir.split('/')[-1]))
     test_generator = test_datagen.flow_from_directory(
@@ -36,16 +36,17 @@ for test_dir in test_dirs:
         class_mode='categorical',
         shuffle=False)
     for fold in folds:
+	pred_times += 1
         print('Model obtained from {}'.format(fold))
         model = build_xception()
         model.load_weights(os.path.join(checkpoint_dir, fold))
         fold_pred = model.predict_generator(
             generator=test_generator, workers=num_workers, verbose=1)
         K.clear_session()
-        test_pred.append(fold_pred)
+        test_pred += fold_pred
     del test_generator
 
-test_pred = np.mean(np.array(test_pred), axis=0)
+test_pred /= pred_times
 np.save('submission/xception/avg_train_finetune_12_crops.npy', test_pred)
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
