@@ -39,7 +39,8 @@ def randomShiftScaleRotate(image,
 
         box0 = np.array([[0, 0], [width, 0], [width, height], [0, height], ])
         box1 = box0 - np.array([width / 2, height / 2])
-        box1 = np.dot(box1, rotate_matrix.T) + np.array([width / 2 + dx, height / 2 + dy])
+        box1 = np.dot(box1, rotate_matrix.T) + \
+            np.array([width / 2 + dx, height / 2 + dy])
 
         box0 = box0.astype(np.float32)
         box1 = box1.astype(np.float32)
@@ -53,8 +54,8 @@ def randomShiftScaleRotate(image,
 
 
 def randomHueSaturationValue(image, hue_shift_limit=(-180, 180),
-                                sat_shift_limit=(-255, 255),
-                                val_shift_limit=(-255, 255), u=0.5):
+                             sat_shift_limit=(-255, 255),
+                             val_shift_limit=(-255, 255), u=0.5):
     if np.random.random() < u:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(image)
@@ -105,19 +106,22 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_imgs = []
         for img_path in batch_x:
             img = cv2.imread(img_path)
-            img = cv2.resize(img, self.input_shape, interpolation=cv2.INTER_NEAREST)
+            img = cv2.resize(
+                img,
+                self.input_shape,
+                interpolation=cv2.INTER_NEAREST)
             img = randomHueSaturationValue(img,
-                                               hue_shift_limit=(-50, 50),
-                                               sat_shift_limit=(-5, 5),
-                                               val_shift_limit=(-15, 15))
+                                           hue_shift_limit=(-50, 50),
+                                           sat_shift_limit=(-5, 5),
+                                           val_shift_limit=(-15, 15))
             img = randomShiftScaleRotate(img,
-                                                   shift_limit=(-0.05, 0.05),
-                                                   scale_limit=(-0, 0),
-                                                   rotate_limit=(0, 30))
+                                         shift_limit=(-0.05, 0.05),
+                                         scale_limit=(-0, 0),
+                                         rotate_limit=(0, 30))
             img = randomHorizontalFlip(img)
             batch_imgs.append(img)
 
-        return np.array(batch_imgs), to_categorical(
+        return np.array(batch_imgs) / 255., to_categorical(
             np.array(batch_y), num_classes=self.num_classes)
 
 
@@ -141,11 +145,10 @@ class FurnituresDatasetNoAugmentation(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = np.array([cv2.resize(cv2.imread(file_name),
-                                          self.input_shape,
-                                          interpolation=cv2.INTER_NEAREST)
-                               for file_name in batch_x])
+        batch_imgs = [cv2.resize(cv2.imread(file_name),
+                                 self.input_shape,
+                                 interpolation=cv2.INTER_NEAREST)
+                      for file_name in batch_x]
 
-        return batch_imgs / \
-            255., to_categorical(
-                np.array(batch_y), num_classes=self.num_classes)
+        return np.array(batch_imgs) / 255., to_categorical(
+            np.array(batch_y), num_classes=self.num_classes)
