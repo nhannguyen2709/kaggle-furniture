@@ -23,7 +23,7 @@ def randomShiftScaleRotate(image,
                            rotate_limit=(-45, 45), aspect_limit=(0, 0),
                            borderMode=cv2.BORDER_CONSTANT, u=0.5):
     if np.random.random() < u:
-        height, width, channel = image.shape
+        height, width, _ = image.shape
 
         angle = np.random.uniform(rotate_limit[0], rotate_limit[1])  # degree
         scale = np.random.uniform(1 + scale_limit[0], 1 + scale_limit[1])
@@ -149,20 +149,3 @@ class FurnituresDatasetNoAugmentation(Sequence):
         return batch_imgs / \
             255., to_categorical(
                 np.array(batch_y), num_classes=self.num_classes)
-
-
-if __name__ == '__main__':
-    import time
-    from utils import get_image_paths_and_labels
-
-    x_from_train_images, y_from_train_images = get_image_paths_and_labels(
-        data_dir='data/train/')
-    train_generator = FurnituresDatasetWithAugmentation(
-        x_from_train_images, y_from_train_images,
-        input_shape=(299, 299), batch_size=32)
-    for i in range(len(train_generator)):
-        start = time.time()
-        x, y = train_generator.__getitem__(i)
-        end = time.time()
-        print(x.shape, y.shape)
-        print('Time taken to load a batch of 32 images: {}'.format(end - start))
