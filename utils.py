@@ -122,10 +122,3 @@ def get_image_paths_and_labels(data_dir):
     x = np.array(x)
     y = np.array(y)
     return x, y
-
-
-def lr_schedule(epoch, lr):
-    if epoch % 5 == 0 and epoch != 0:
-        return lr * 0.25
-    else:
-        return lr

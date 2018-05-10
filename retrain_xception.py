@@ -35,7 +35,7 @@ valid_generator = FurnituresDatasetNoAugmentation(
     x_valid, y_valid,
     batch_size=batch_size, input_shape=input_shape)
 
-filepath = 'checkpoint/xception/ema_weights.hdf5'
+filepath = 'checkpoint/xception/weights.hdf5'
 save_best = ExponentialMovingAverage(filepath=filepath,
                                         verbose=1,
                                         monitor='val_acc',
@@ -43,13 +43,13 @@ save_best = ExponentialMovingAverage(filepath=filepath,
                                         mode='max')
 callbacks = [save_best]
 print('Retrain the whole network')
-model = build_xception()
+model = load_model('checkpoint/xception/weights.hdf5')
 for layer in model.layers:
     layer.trainable = True
 model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
                 metrics=['acc'])
 model.fit_generator(generator=train_generator,
-                    epochs=25,
+                    epochs=20,
                     callbacks=callbacks,
                     validation_data=valid_generator,
                     workers=num_workers)
