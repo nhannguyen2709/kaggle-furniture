@@ -14,7 +14,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSp
 from sklearn.utils import shuffle
 
 from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
-from utils import build_inception_v3, get_image_paths_and_labels, MultiGPUModel
+from model_utils import build_inception_v3, get_image_paths_and_labels, MultiGPUModel
 
 
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(

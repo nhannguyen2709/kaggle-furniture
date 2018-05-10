@@ -18,7 +18,7 @@ from sklearn.utils import shuffle
 from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
 from keras_EMA import ExponentialMovingAverage
 from keras_CLR import CyclicLR
-from utils import build_inception_resnet_v2, get_image_paths_and_labels, MultiGPUModel
+from model_utils import build_inception_resnet_v2, get_image_paths_and_labels, MultiGPUModel
 
 
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
@@ -70,52 +70,7 @@ for train_index, test_index in rskf.split(
         save_best_only=True,
         mode='max')
     callbacks = [trainval_lr_scheduler, save_best_trainval]
-    # # multi-gpu train
-    # base_model = build_inception_resnet_v2()
-    # # if os.path.exists(filepath):
-    # #    base_model = load_model(filepath)
-    # base_model.compile(optimizer=Adam(lr=1e-3),
-    #                    loss='categorical_crossentropy',
-    #                    metrics=['acc'])
-    # parallel_model = MultiGPUModel(base_model, gpus=num_gpus)
-    # parallel_model.compile(optimizer=Adam(lr=1e-3), loss='categorical_crossentropy', metrics=['acc'])
-    # parallel_model.fit_generator(generator=train_generator,
-    #                              epochs=epochs,
-    #                              callbacks=callbacks,
-    #                              validation_data=valid_generator,
-    #                              workers=num_workers)   
-    
-    # del train_generator, valid_generator
-    # gc.collect()
-    
-    # print('Found {} images belonging to {} classes'.format(len(x_from_val_images), 128))
-    # print('Found {} images belonging to {} classes'.format(len(x_from_minival_images), 128))
-    # val_generator = FurnituresDatasetWithAugmentation(
-    #     x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
-    # minival_generator = FurnituresDatasetNoAugmentation(
-    #     x_from_minival_images, y_from_minival_images,
-    #     batch_size=batch_size, input_shape=input_shape)
-    # valminival_lr_scheduler = CyclicLR(base_lr=1e-4, max_lr=1e-3, step_size=int(len(val_generator)*2), mode='exp_range'
-    # valminival_filepath = 'checkpoint/inception_resnet_v2/valminival.fold{}.best.hdf5'.format(
-    #     fold)
-    # save_best_valminival = ExponentialMovingAverage(filepath=valminival_filepath,
-    #     verbose=1,
-    #     monitor='val_acc',
-    #     save_best_only=True,
-    #     mode='max')
-    # callbacks = [valminival_lr_scheduler, save_best_valminival]
-    
-    # base_model.compile(optimizer=Adam(lr=1e-4),
-    #                    loss='categorical_crossentropy',
-    #                    metrics=['acc'])
-    # parallel_model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['acc'])
-    # parallel_model.fit_generator(generator=val_generator,
-    #                              epochs=10,
-    #                              callbacks=callbacks,
-    #                              validation_data=minival_generator,
-    #                              workers=num_workers)
 
-    # single-gpu train
     if os.path.exists(trainval_filepath):
         model = load_model(trainval_filepath)
         for i in range(1, 31):

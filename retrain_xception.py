@@ -6,14 +6,13 @@ import tensorflow as tf
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
-from keras.callbacks import ModelCheckpoint
 from keras.models import load_model
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
 from keras_EMA import ExponentialMovingAverage
 from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
-from utils import build_xception, get_image_paths_and_labels, MultiGPUModel
+from model_utils import build_xception, get_image_paths_and_labels, MultiGPUModel
 
 input_shape = (448, 448)
 batch_size = 8
