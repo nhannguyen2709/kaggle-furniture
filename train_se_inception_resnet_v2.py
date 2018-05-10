@@ -11,8 +11,8 @@ from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
 from keras_EMA import ExponentialMovingAverage
-from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
-from model_utils import build_se_inception_resnet_v2, get_image_paths_and_labels, MultiGPUModel
+from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
+from model_utils import build_se_inception_resnet_v2, MultiGPUModel
 
 input_shape = (448, 448)
 batch_size = 8

@@ -109,16 +109,3 @@ def build_xception():
             layer.trainable = False
     
     return model
-
-
-def get_image_paths_and_labels(data_dir):
-    x = []
-    y = []
-    for folder in sorted(os.listdir(data_dir)):
-        class_path = os.path.join(data_dir, folder)
-        for image_filename in sorted(os.listdir(class_path)):
-            x.append(os.path.join(class_path, image_filename))
-            y.append(int(folder) - 1)
-    x = np.array(x)
-    y = np.array(y)
-    return x, y

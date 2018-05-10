@@ -15,10 +15,10 @@ from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 from sklearn.utils import shuffle
 
-from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
+from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
 from keras_EMA import ExponentialMovingAverage
 from keras_CLR import CyclicLR
-from model_utils import build_inception_resnet_v2, get_image_paths_and_labels, MultiGPUModel
+from model_utils import build_inception_resnet_v2, MultiGPUModel
 
 
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
