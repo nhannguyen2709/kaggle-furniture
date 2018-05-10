@@ -5,25 +5,25 @@ import os
 import tensorflow as tf
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-from keras.applications.xception import Xception
 from keras.backend import tensorflow_backend as K
 from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
+from utils import build_xception
 
 test_folders = sorted(os.listdir('data/test'))
 test_dirs = [os.path.join('data/test', test_folder)
              for test_folder in test_folders]
+test_dirs = ['data/test/test12703']
 
-num_workers = 10
+num_workers = 4
 submit_dir = 'submission/xception'
-submit_filename = 'avg_train_finetune_12_crops.csv'
+submit_filename = 'avg_folds.csv'
 
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
 
-folds = ['trainval.fold1', 'trainval.fold2', 'trainval.fold3', 'trainval.fold4', 'trainval.fold5',
-         'valminival.fold1', 'valminival.fold2', 'valminival.fold3', 'valminival.fold4', 'valminival.fold5']
+folds = ['avg.folds.hdf5']
 predictions = []
 
 for test_dir in test_dirs:
@@ -37,11 +37,8 @@ for test_dir in test_dirs:
 
     for fold in folds:
         print('Model obtained from {}'.format(fold))
-        model = Xception(include_top=False)
-        x = GlobalMaxPooling2D(name='max_pool')(model.layers[-1].output)
-        x = Dense(128, activation='softmax', name='predictions')(x)
-        model = Model(inputs=model.layers[0].input, outputs=x)
-        model.load_weights('checkpoint/xception/{}.best.hdf5'.format(fold))
+        model = build_xception()
+        model.load_weights('checkpoint/xception/{}'.format(fold))
         fold_pred = model.predict_generator(
             generator=test_generator, workers=num_workers, verbose=1)
         K.clear_session()
@@ -51,10 +48,9 @@ for test_dir in test_dirs:
 
 test_pred = np.mean(np.array(predictions), axis=0)
 del predictions
-np.save('submission/xception/avg_train_finetune_12_crops.npy', test_pred)
+np.save('submission/xception/avg_folds.npy', test_pred)
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
-
 # recreate test generator to extract image filenames
 test_generator = test_datagen.flow_from_directory(
     'data/test/test12703',
