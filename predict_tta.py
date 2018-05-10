@@ -36,7 +36,7 @@ for test_dir in test_dirs:
         class_mode='categorical',
         shuffle=False)
     for fold in folds:
-	pred_times += 1
+        pred_times += 1	    
         print('Model obtained from {}'.format(fold))
         model = build_xception()
         model.load_weights(os.path.join(checkpoint_dir, fold))
