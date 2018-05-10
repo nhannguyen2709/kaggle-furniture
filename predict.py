@@ -9,22 +9,23 @@ from keras.backend import tensorflow_backend as K
 from keras.layers import Dense, GlobalMaxPooling2D
 from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
-from utils import build_xception
-
-test_folders = sorted(os.listdir('data/test'))
-test_dirs = [os.path.join('data/test', test_folder)
-             for test_folder in test_folders]
-test_dirs = ['data/test/test12703']
+from model_utils import build_xception
 
 num_workers = 4
+test_data_dir = 'data/test'
 submit_dir = 'submission/xception'
-submit_filename = 'avg_folds.csv'
+checkpoint_dir = 'checkpoint/xception'
+submit_filename = 'avg_train_finetune_12_crops.csv'
+
+test_folders = sorted(os.listdir(test_data_dir))
+test_dirs = [os.path.join(test_data_dir, test_folder)
+             for test_folder in test_folders]
+folds = sorted(os.listdir(checkpoint_dir))
 
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
 
-folds = ['avg.folds.hdf5']
-predictions = []
+test_pred = []
 
 for test_dir in test_dirs:
     print('\nData {}'.format(test_dir.split('/')[-1]))
@@ -34,26 +35,23 @@ for test_dir in test_dirs:
         target_size=(299, 299),
         class_mode='categorical',
         shuffle=False)
-
     for fold in folds:
         print('Model obtained from {}'.format(fold))
         model = build_xception()
-        model.load_weights('checkpoint/xception/{}'.format(fold))
+        model.load_weights(os.path.join(checkpoint_dir, fold))
         fold_pred = model.predict_generator(
             generator=test_generator, workers=num_workers, verbose=1)
         K.clear_session()
-        predictions.append(fold_pred)
-
+        test_pred.append(fold_pred)
     del test_generator
 
-test_pred = np.mean(np.array(predictions), axis=0)
-del predictions
-np.save('submission/xception/avg_folds.npy', test_pred)
+test_pred = np.mean(np.array(test_pred), axis=0)
+np.save('submission/xception/avg_train_finetune_12_crops.npy', test_pred)
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
 # recreate test generator to extract image filenames
 test_generator = test_datagen.flow_from_directory(
-    'data/test/test12703',
+    'data/test/test12695',
     batch_size=64,
     target_size=(299, 299),
     class_mode='categorical',
@@ -63,7 +61,7 @@ my_submit = pd.concat([pd.Series(test_generator.filenames),
                        pd.Series(test_pred)], axis=1)
 my_submit.columns = ['id', 'predicted']
 my_submit['id'] = my_submit['id'].map(lambda x: int(
-    x.replace('test12703/', '').replace('.jpg', '')))
+    x.replace('test12695/', '').replace('.jpg', '')))
 my_submit['predicted'].fillna(-1, inplace=True)
 my_submit['predicted'] = my_submit['predicted'].astype(int)
 my_submit['predicted'] = my_submit['predicted']
