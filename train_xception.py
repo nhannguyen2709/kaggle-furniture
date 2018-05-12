@@ -10,25 +10,15 @@ from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint
 from keras.models import load_model
 from keras.optimizers import Adam
-from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
+from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.utils import shuffle
 
-from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
-from model_utils import build_xception, get_image_paths_and_labels, MultiGPUModel
+from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
+from model_utils import build_xception
 
 
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
     data_dir='data/train/')
-x_from_val_images, y_from_val_images = get_image_paths_and_labels(
-    data_dir='data/validation/')
-
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.1, random_state=4)
-for val_index, minival_index in sss.split(
-        x_from_val_images, y_from_val_images):
-    x_from_minival_images, y_from_minival_images = x_from_val_images[
-        minival_index], y_from_val_images[minival_index]
-    x_from_val_images, y_from_val_images = x_from_val_images[
-        val_index], y_from_val_images[val_index]
 
 input_shape = (299, 299)
 batch_size = 32
@@ -73,8 +63,9 @@ for train_index, test_index in rskf.split(
                         validation_data=valid_generator,
                         workers=num_workers)
 
-    print("\nFine-tune block 13 and block 14's layers")
     K.clear_session()
+
+    print("\nFine-tune block 13 and block 14's layers")
     model = load_model(trainval_filepath)
     for i in range(1, 22):
         model.layers[-i].trainable = True
@@ -88,39 +79,6 @@ for train_index, test_index in rskf.split(
                         epochs=25,
                         callbacks=callbacks,
                         validation_data=valid_generator,
-                        workers=num_workers)
-
-    print('\nFine-tune on the validation set')
-    K.clear_session()
-    print(
-        'Found {} images belonging to {} classes'.format(
-            len(x_from_val_images),
-            128))
-    print(
-        'Found {} images belonging to {} classes'.format(
-            len(x_from_minival_images),
-            128))
-    val_generator = FurnituresDatasetWithAugmentation(
-        x_from_val_images, y_from_val_images, batch_size=batch_size, input_shape=input_shape)
-    minival_generator = FurnituresDatasetNoAugmentation(
-        x_from_minival_images, y_from_minival_images,
-        batch_size=batch_size, input_shape=input_shape)
-    valminival_filepath = 'checkpoint/xception/valminival.fold{}.best.hdf5'.format(
-        fold)
-    save_best_valminival = ModelCheckpoint(filepath=valminival_filepath,
-                                           verbose=1,
-                                           monitor='val_acc',
-                                           save_best_only=True,
-                                           mode='max')
-    callbacks = [save_best_valminival]
-    model = load_model(trainval_filepath)
-    model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
-    model.fit_generator(generator=val_generator,
-                        epochs=10,
-                        callbacks=callbacks,
-                        validation_data=minival_generator,
                         workers=num_workers)
 
     K.clear_session()
