@@ -16,7 +16,7 @@ from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentat
 from model_utils import build_xception, MultiGPUModel
 
 input_shape = (448, 448)
-batch_size = 8
+batch_size = 16
 num_workers = 4
 
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
