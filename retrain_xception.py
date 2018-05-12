@@ -5,14 +5,15 @@ import pandas as pd
 import tensorflow as tf
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+from keras.callbacks import ReduceLROnPlateau
 from keras.backend import tensorflow_backend as K
 from keras.models import load_model
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
 from keras_EMA import ExponentialMovingAverage
-from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation
-from model_utils import build_xception, get_image_paths_and_labels, MultiGPUModel
+from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
+from model_utils import build_xception, MultiGPUModel
 
 input_shape = (448, 448)
 batch_size = 8
@@ -34,19 +35,23 @@ valid_generator = FurnituresDatasetNoAugmentation(
     x_valid, y_valid,
     batch_size=batch_size, input_shape=input_shape)
 
-filepath = 'checkpoint/xception/weights.hdf5'
+filepath = 'checkpoint/xception/weights1.hdf5'
 save_best = ExponentialMovingAverage(filepath=filepath,
                                         verbose=1,
                                         monitor='val_acc',
                                         save_best_only=True,
                                         mode='max')
-callbacks = [save_best]
-print('Retrain the whole network')
-model = load_model('checkpoint/xception/weights.hdf5')
-for layer in model.layers:
-    layer.trainable = True
-model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                metrics=['acc'])
+reduce_lr = ReduceLROnPlateau(monitor='val_acc',
+    factor=0.2,
+    patience=3)
+callbacks = [save_best, reduce_lr]
+
+if os.path.exists(filepath):
+    model = load_model(filepath)
+else: 
+    model = load_model('checkpoint/xception/trainval.fold1.best.hdf5')
+    model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
+                  metrics=['acc'])
 model.fit_generator(generator=train_generator,
                     epochs=20,
                     callbacks=callbacks,
