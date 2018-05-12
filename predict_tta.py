@@ -18,8 +18,8 @@ checkpoint_dir = 'checkpoint/xception'
 submit_filename = 'avg_train_finetune_12_crops.csv'
 
 test_folders = sorted(os.listdir(test_data_dir))
-test_dirs = [os.path.join(test_data_dir, test_folder)
-             for test_folder in test_folders][0]
+test_dirs = [[os.path.join(test_data_dir, test_folder)
+             for test_folder in test_folders][0]]
 folds = sorted(os.listdir(checkpoint_dir))
 
 test_datagen = ImageDataGenerator(
