@@ -52,7 +52,7 @@ test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
 # recreate test generator to extract image filenames
 test_generator = test_datagen.flow_from_directory(
-    'data/test/test12695',
+    test_dir,
     batch_size=64,
     target_size=(299, 299),
     class_mode='categorical',
@@ -62,7 +62,7 @@ my_submit = pd.concat([pd.Series(test_generator.filenames),
                        pd.Series(test_pred)], axis=1)
 my_submit.columns = ['id', 'predicted']
 my_submit['id'] = my_submit['id'].map(lambda x: int(
-    x.replace('test12695/', '').replace('.jpg', '')))
+    x.split('/')[-1].split('.')[0]))
 my_submit['predicted'].fillna(-1, inplace=True)
 my_submit['predicted'] = my_submit['predicted'].astype(int)
 my_submit['predicted'] = my_submit['predicted']
