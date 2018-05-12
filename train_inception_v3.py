@@ -65,10 +65,10 @@ for train_index, test_index in rskf.split(
 
     K.clear_session()
 
-    print("\nFine-tune block 13 and block 14's layers")
+    print("\nFine-tune top 2 inception blocks")
     model = load_model(trainval_filepath)
-    for i in range(1, 22):
-        model.layers[-i].trainable = True
+    for layer in model.layers[249:]:
+        layer.trainable = True
     trainable_count = int(
         np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
     print('Trainable params: {:,}'.format(trainable_count))
