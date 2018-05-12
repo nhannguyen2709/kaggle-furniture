@@ -15,7 +15,7 @@ num_workers = 4
 test_data_dir = 'data/test'
 submit_dir = 'submission/xception'
 checkpoint_dir = 'checkpoint/xception'
-submit_filename = 'weights1.csv'
+submit_filename = 'weights2.csv'
 
 test_folders = sorted(os.listdir(test_data_dir))
 test_dirs = [[os.path.join(test_data_dir, test_folder)
@@ -47,7 +47,6 @@ for test_dir in test_dirs:
     del test_generator
 
 test_pred /= pred_times
-np.save('submission/xception/avg_train_finetune_12_crops.npy', test_pred)
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
 # recreate test generator to extract image filenames
