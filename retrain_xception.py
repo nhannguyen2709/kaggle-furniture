@@ -16,7 +16,7 @@ from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentat
 from model_utils import build_xception, MultiGPUModel
 
 input_shape = (448, 448)
-batch_size = 16
+batch_size = 8
 num_workers = 4
 
 x_from_train_images, y_from_train_images = get_image_paths_and_labels(
@@ -43,7 +43,7 @@ save_best = ExponentialMovingAverage(filepath=filepath,
                                         mode='max')
 reduce_lr = ReduceLROnPlateau(monitor='val_acc',
     factor=0.2,
-    patience=3)
+    patience=2)
 callbacks = [save_best, reduce_lr]
 
 if os.path.exists(filepath):
