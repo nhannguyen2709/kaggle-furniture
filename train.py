@@ -1,15 +1,19 @@
 import argparse
+import numpy as np
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-from model_utils import train_with_kfold_cv
-from data import get_image_paths_and_labels
+from keras.backend import tensorflow_backend as K
+from keras.callbacks import ModelCheckpoint
+from keras.models import load_model
+from keras.optimizers import Adam
+from sklearn.model_selection import train_test_split
+
+from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
+from model_utils import build_xception, build_densenet_201, build_inception_v3 
 
 parser = argparse.ArgumentParser(
     description='Training')
-parser.add_argument(
-    '--random-state',
-    type=int,
-    metavar='N',
-    help='random state when splitting data into k folds')
 parser.add_argument(
     '--batch-size',
     default=32,
@@ -18,8 +22,8 @@ parser.add_argument(
     help='mini-batch size')
 parser.add_argument(
     '--input-shape',
-    default=(299, 299),
-    type=tuple)
+    nargs='+',
+    type=int)
 parser.add_argument(
     '--model-name',
     type=str,
@@ -33,15 +37,84 @@ parser.add_argument(
 parser.add_argument(
     '--num-layers-trained',
     type=int,
-    metvar='N',
+    metavar='N',
     help='number of layers to be trained in second stage')
 
+
+def train_for_k_iterations(batch_size,
+                        input_shape, x_from_train_images,
+                        y_from_train_images, model_name,
+                        num_workers, num_layers_trained,
+                        n_iters=5):
+    for iter in range(1, n_iters + 1):
+        x_train, x_valid, y_train, y_valid = train_test_split(x_from_train_images, y_from_train_images, test_size=0.01)
+        print('\nIteration {}'.format(iter))
+        print('Found {} images belonging to {} classes'.format(len(x_train), 128))
+        print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
+        train_generator = FurnituresDatasetWithAugmentation(
+            x_train, y_train,
+            batch_size=batch_size, input_shape=input_shape)
+        valid_generator = FurnituresDatasetNoAugmentation(
+            x_valid, y_valid,
+            batch_size=batch_size, input_shape=input_shape)
+
+        filepath = 'checkpoint/{}/iter{}.hdf5'.format(model_name,
+                                                           iter)
+        save_best = ModelCheckpoint(filepath=filepath,
+                                    verbose=1,
+                                    monitor='val_acc',
+                                    save_best_only=True,
+                                    mode='max')
+        callbacks = [save_best]
+
+        print('Train the last Dense layer')
+        if os.path.exists(filepath):
+            model = load_model(filepath)
+        elif model_name == 'xception':
+            model = build_xception()
+            model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
+                          metrics=['acc'])
+        elif model_name == 'inception_v3':
+            model = build_inception_v3()
+            model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
+                          metrics=['acc'])
+        elif model_name == 'densenet_201':
+            model = build_densenet_201()
+            model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
+                          metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=10,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+
+        K.clear_session()
+
+        print("\nFine-tune previous blocks")
+        model = load_model(filepath)
+        for i in range(1, num_layers_trained):
+            model.layers[-i].trainable = True
+        trainable_count = int(
+            np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
+        print('Trainable params: {:,}'.format(trainable_count))
+        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
+                      loss='categorical_crossentropy',
+                      metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=30,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+
+        K.clear_session()
+
+        
 if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
     x_from_train_images, y_from_train_images = get_image_paths_and_labels(
         data_dir='data/train/')
-    train_with_kfold_cv(args.random_state, args.batch_size, args.input_shape,
+    train_for_k_iterations(args.batch_size, tuple(args.input_shape),
                         x_from_train_images, y_from_train_images, args.model_name, args.num_workers,
                         args.num_layers_trained)
