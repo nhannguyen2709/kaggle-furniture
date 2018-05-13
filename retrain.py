@@ -3,6 +3,7 @@ import numpy as np
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+from keras.backend import tensorflow_backend as K
 from keras.callbacks import ReduceLROnPlateau
 from keras.models import load_model
 from keras.optimizers import Adam
@@ -74,6 +75,7 @@ def retrain_for_k_iterations(batch_size,
                     callbacks=callbacks,
                     validation_data=valid_generator,
                     workers=num_workers)
+        K.clear_session()
 
 
 if __name__ == '__main__':
