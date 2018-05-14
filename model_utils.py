@@ -12,7 +12,6 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.utils import multi_gpu_model
 
-from inception_v4 import inception_v4
 from keras_squeeze_excite_network.se_densenet import SEDenseNetImageNet264
 from keras_squeeze_excite_network.se_inception_v3 import SEInceptionV3
 from keras_squeeze_excite_network.se_inception_resnet_v2 import SEInceptionResNetV2
@@ -65,25 +64,6 @@ def build_inception_v3():
     output = Dense(128, activation='softmax', name='predictions')(
         model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
-    finetuned_layers_names = [
-        'predictions']
-    finetuned_layers = [model.get_layer(name=layer_name)
-                        for layer_name in finetuned_layers_names]
-    for layer in model.layers:
-        if layer not in finetuned_layers:
-            layer.trainable = False
-
-    return model
-
-
-def build_inception_v4():
-    model = inception_v4(num_classes=128, include_top=False)
-    x = AveragePooling2D((8,8), padding='valid')(model.layers[-1].output)
-    x = Dropout(0.4)(x)
-    x = Flatten()(x)
-    x = Dense(units=128, activation='softmax', name='predictions')(x)
-
-    model = Model(model.layers[0].input, x, name='inception_v4')
     finetuned_layers_names = [
         'predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
