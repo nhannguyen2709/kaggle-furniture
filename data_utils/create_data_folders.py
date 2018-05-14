@@ -15,12 +15,12 @@ def copyFile(src, dest):
         print('Error: %s' % e.strerror)
 
 def create_train_and_val_folders():
-    num_train_samples = len(os.listdir('train/'))
-    num_valid_samples = len(os.listdir('validation/'))
+    num_train_samples = len(os.listdir('../train/'))
+    num_valid_samples = len(os.listdir('../validation/'))
     print('Train images: {}, validation images: {}'.format(
         num_train_samples, num_valid_samples))
-    train_images = sorted(os.listdir('train/'))
-    valid_images = sorted(os.listdir('validation/'))
+    train_images = sorted(os.listdir('../train/'))
+    valid_images = sorted(os.listdir('../validation/'))
     labels_idxs = sorted(set([int(image.split('_')[1].split('.')[0])
                         for image in train_images]))
 
@@ -36,12 +36,12 @@ def create_train_and_val_folders():
 
     for image in tqdm(train_images):
         label_idx = image.split('_')[1].split('.')[0]
-        old_path = os.path.join('train/', image)
+        old_path = os.path.join('../train/', image)
         new_path = os.path.join('../data/train', label_idx)
         copyFile(old_path, new_path)
     for image in tqdm(valid_images):
         label_idx = image.split('_')[1].split('.')[0]
-        old_path = os.path.join('validation/', image)
+        old_path = os.path.join('../validation/', image)
         new_path = os.path.join('../data/validation', label_idx)
         copyFile(old_path, new_path)
 
