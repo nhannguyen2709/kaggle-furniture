@@ -170,7 +170,7 @@ def preprocess_test_imgs(test_dir, percent_cropped=0.1):
 
 
 if __name__=='__main__':
-    # create_train_and_val_folders()
+    create_train_and_val_folders()
     # crop_and_save_imgs(0.1)
-    convert_test_files_to_rgb('../data/test/test12703/test12703')
-    preprocess_test_imgs('../data/test/test12703/test12703')
+    # convert_test_files_to_rgb('../data/test/test12703/test12703')
+    # preprocess_test_imgs('../data/test/test12703/test12703')
