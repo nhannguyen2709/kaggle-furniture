@@ -32,6 +32,7 @@ parser.add_argument(
     help='number of epochs when resuming')
 parser.add_argument(
     '--resume',
+    default='False',
     type=str,
     help='indicate whether to continue training')
 parser.add_argument(
