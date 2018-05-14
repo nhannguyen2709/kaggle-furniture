@@ -26,6 +26,16 @@ parser.add_argument(
     nargs='+',
     type=int)
 parser.add_argument(
+    '--epochs',
+    default=20,
+    type=int,
+    metavar='N',
+    help='number of epochs when resuming')
+parser.add_argument(
+    '--resume',
+    type=str,
+    help='indicate whether to continue training')
+parser.add_argument(
     '--model-name',
     type=str,
     help='model to be retrained')
@@ -41,7 +51,7 @@ def retrain_for_k_iterations(batch_size,
                         input_shape, merged_x,
                         merged_y, model_name,
                         num_workers,
-                        n_iters=2):
+                        n_iters=2, resume=args.resume):
     for iter in range(1, n_iters + 1):
         x_train, x_valid, y_train, y_valid = train_test_split(merged_x, merged_y, test_size=0.005)
         print('\nIteration {}'.format(iter))
@@ -66,16 +76,29 @@ def retrain_for_k_iterations(batch_size,
             patience=2)
         callbacks = [save_best, reduce_lr]
 
-        model = load_model(filepath)
-        model.compile(optimizer=Adam(lr=1e-3, decay=1e-5),
-                    loss='categorical_crossentropy',
-                    metrics=['acc'])
-        model.fit_generator(generator=train_generator,
-                    epochs=20,
-                    callbacks=callbacks,
-                    validation_data=valid_generator,
-                    workers=num_workers)
-        K.clear_session()
+        if resume == 'True':
+            print('Resume training from the last checkpoint')
+            model = load_model(filepath)
+            trainable_count = int(
+                np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
+            print('Trainable params: {:,}'.format(trainable_count))
+            model.fit_generator(generator=train_generator,
+                            epochs=args.epochs,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+            K.clear_session()
+        else:
+            model = load_model(filepath)
+            model.compile(optimizer=Adam(lr=1e-3, decay=1e-5),
+                        loss='categorical_crossentropy',
+                        metrics=['acc'])
+            model.fit_generator(generator=train_generator,
+                        epochs=20,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+            K.clear_session()
 
 
 if __name__ == '__main__':
