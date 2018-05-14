@@ -112,4 +112,4 @@ if __name__ == '__main__':
     merged_x, merged_y = np.concatenate((x_from_train_images, x_from_val_images)), np.concatenate((y_from_train_images, y_from_val_images))
 
     retrain_for_k_iterations(args.batch_size, tuple(args.input_shape),
-                        merged_x, merged_y, args.model_name, args.num_workers, arg.resume)
+                        merged_x, merged_y, args.model_name, args.num_workers, args.resume)
