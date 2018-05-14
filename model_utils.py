@@ -35,7 +35,7 @@ class MultiGPUModel(Model):
 
 
 def build_densenet_201():
-    model = DenseNet201(include_top=False, pooling='avg')
+    model = DenseNet201(include_top=False, pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(
         model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -51,7 +51,7 @@ def build_densenet_201():
 
 
 def build_se_inception_v3():
-    model = SEInceptionV3(include_top=False, weights='imagenet', pooling='avg')
+    model = SEInceptionV3(include_top=False, weights='imagenet', pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(
         model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -60,7 +60,7 @@ def build_se_inception_v3():
 
 
 def build_inception_v3():
-    model = InceptionV3(include_top=False, pooling='avg')
+    model = InceptionV3(include_top=False, pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(
         model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -77,7 +77,7 @@ def build_inception_v3():
 
 def build_se_inception_resnet_v2():
     model = SEInceptionResNetV2(
-        include_top=False, weights='imagenet', pooling='avg')
+        include_top=False, weights='imagenet', pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(
         model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
@@ -86,7 +86,7 @@ def build_se_inception_resnet_v2():
 
 
 def build_inception_resnet_v2():
-    model = InceptionResNetV2(include_top=False, pooling='avg')
+    model = InceptionResNetV2(include_top=False, pooling='max')
     output = Dense(128, activation='softmax', name='predictions')(
         model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
