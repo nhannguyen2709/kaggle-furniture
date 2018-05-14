@@ -15,11 +15,13 @@ num_workers = 4
 test_data_dir = 'data/test'
 submit_dir = 'submission/xception'
 checkpoint_dir = 'checkpoint/xception'
-submit_filename = 'weights2.csv'
+submit_filename = 'iter12345'
 
 test_folders = sorted(os.listdir(test_data_dir))
 test_dirs = [[os.path.join(test_data_dir, test_folder)
              for test_folder in test_folders][0]]
+test_dirs = ['data/test/test12703']
+
 folds = sorted(os.listdir(checkpoint_dir))
 
 test_datagen = ImageDataGenerator(
@@ -47,6 +49,7 @@ for test_dir in test_dirs:
     del test_generator
 
 test_pred /= pred_times
+np.save('submission/xception/{}.npy'.format(submit_filename), test_pred)
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
 # recreate test generator to extract image filenames
@@ -75,4 +78,4 @@ missing_pictures_pred = sample_submit.loc[sample_submit['id'].isin(
 final_submit = my_submit.append(missing_pictures_pred)
 final_submit.loc[final_submit.predicted == -1, 'predicted'] = 101
 final_submit.sort_values('id', inplace=True)
-final_submit.to_csv(os.path.join(submit_dir, submit_filename), index=False)
+final_submit.to_csv(os.path.join(submit_dir, '{}.csv'.format(submit_filename)), index=False)
