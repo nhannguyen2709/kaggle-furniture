@@ -7,11 +7,12 @@ from keras.applications.inception_v3 import InceptionV3
 from keras.applications.xception import Xception
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ReduceLROnPlateau
-from keras.layers import Concatenate, Dense, Dropout, GlobalMaxPooling2D
+from keras.layers import Concatenate, Dense, Dropout, GlobalMaxPooling2D, AveragePooling2D, Flatten
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.utils import multi_gpu_model
 
+from inception_v4 import inception_v4
 from keras_squeeze_excite_network.se_densenet import SEDenseNetImageNet264
 from keras_squeeze_excite_network.se_inception_v3 import SEInceptionV3
 from keras_squeeze_excite_network.se_inception_resnet_v2 import SEInceptionResNetV2
@@ -75,6 +76,25 @@ def build_inception_v3():
     return model
 
 
+def build_inception_v4():
+    model = inception_v4(num_classes=128, include_top=False)
+    x = AveragePooling2D((8,8), padding='valid')(model.layers[-1].output)
+    x = Dropout(0.4)(x)
+    x = Flatten()(x)
+    x = Dense(units=128, activation='softmax', name='predictions')(x)
+
+    model = Model(model.layers[0].input, x, name='inception_v4')
+    finetuned_layers_names = [
+        'predictions']
+    finetuned_layers = [model.get_layer(name=layer_name)
+                        for layer_name in finetuned_layers_names]
+    for layer in model.layers:
+        if layer not in finetuned_layers:
+            layer.trainable = False
+
+    return model
+
+
 def build_se_inception_resnet_v2():
     model = SEInceptionResNetV2(
         include_top=False, weights='imagenet', pooling='max')
@@ -102,11 +122,8 @@ def build_inception_resnet_v2():
 
 
 def build_xception():
-    model = Xception(include_top=False, pooling='avg')
-    max_pool = GlobalMaxPooling2D()(model.layers[-2].output)
-    global_pool = Concatenate()([max_pool, model.layers[-1].output])
-    global_pool = Dropout(0.5)(global_pool)
-    output = Dense(128, activation='softmax', name='predictions')(global_pool)
+    model = Xception(include_top=False, pooling='max')
+    output = Dense(128, activation='softmax', name='predictions')(model.layers[-1].output)
     model = Model(inputs=model.layers[0].input, outputs=output)
     finetuned_layers_names = ['predictions']
     finetuned_layers = [model.get_layer(name=layer_name)
