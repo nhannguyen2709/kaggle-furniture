@@ -67,7 +67,7 @@ def train_for_k_iterations(batch_size,
                                     mode='max')
         callbacks = [save_best]
 
-        print('Train the last Dense layer')
+        # print('Train the last Dense layer')
         if os.path.exists(filepath):
             model = load_model(filepath)
         elif model_name == 'xception':
@@ -87,26 +87,26 @@ def train_for_k_iterations(batch_size,
             model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
                           metrics=['acc'])
 
-        model.fit_generator(generator=train_generator,
-                            epochs=5,
-                            callbacks=callbacks,
-                            validation_data=valid_generator,
-                            workers=num_workers)
+        # model.fit_generator(generator=train_generator,
+        #                     epochs=5,
+        #                     callbacks=callbacks,
+        #                     validation_data=valid_generator,
+        #                     workers=num_workers)
 
         K.clear_session()
 
         print("\nFine-tune previous blocks")
-        model = load_model(filepath)
-        for i in range(1, num_layers_trained):
-            model.layers[-i].trainable = True
+        # model = load_model(filepath)
+        # for i in range(1, num_layers_trained):
+        #     model.layers[-i].trainable = True
         trainable_count = int(
             np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
         print('Trainable params: {:,}'.format(trainable_count))
-        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                      loss='categorical_crossentropy',
-                      metrics=['acc'])
+        # model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
+        #               loss='categorical_crossentropy',
+        #               metrics=['acc'])
         model.fit_generator(generator=train_generator,
-                            epochs=35,
+                            epochs=25,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             workers=num_workers)
