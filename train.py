@@ -10,7 +10,7 @@ from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
 from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
-from model_utils import build_xception, build_densenet_201, build_inception_v3, build_inception_v4 
+from model_utils import build_xception, build_densenet_201, build_inception_v3, build_inception_resnet_v2 
 
 parser = argparse.ArgumentParser(
     description='Training')
@@ -78,16 +78,17 @@ def train_for_k_iterations(batch_size,
             model = build_inception_v3()
             model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
                           metrics=['acc'])
-        elif model_name == 'inception_v4':
-            model = build_inception_v4()
+        elif model_name == 'inception_resnet_v2':
+            model = build_inception_resnet_v2()
             model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
                           metrics=['acc'])
         elif model_name == 'densenet_201':
             model = build_densenet_201()
             model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
                           metrics=['acc'])
+
         model.fit_generator(generator=train_generator,
-                            epochs=10,
+                            epochs=5,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             workers=num_workers)
@@ -105,7 +106,7 @@ def train_for_k_iterations(batch_size,
                       loss='categorical_crossentropy',
                       metrics=['acc'])
         model.fit_generator(generator=train_generator,
-                            epochs=30,
+                            epochs=35,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             workers=num_workers)
