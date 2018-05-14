@@ -51,7 +51,7 @@ def retrain_for_k_iterations(batch_size,
                         input_shape, merged_x,
                         merged_y, model_name,
                         num_workers,
-                        n_iters=2, resume=args.resume):
+                        resume, n_iters=2):
     for iter in range(1, n_iters + 1):
         x_train, x_valid, y_train, y_valid = train_test_split(merged_x, merged_y, test_size=0.005)
         print('\nIteration {}'.format(iter))
@@ -112,4 +112,4 @@ if __name__ == '__main__':
     merged_x, merged_y = np.concatenate((x_from_train_images, x_from_val_images)), np.concatenate((y_from_train_images, y_from_val_images))
 
     retrain_for_k_iterations(args.batch_size, tuple(args.input_shape),
-                        merged_x, merged_y, args.model_name, args.num_workers)
+                        merged_x, merged_y, args.model_name, args.num_workers, arg.resume)

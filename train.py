@@ -55,7 +55,7 @@ def train_for_k_iterations(batch_size,
                         input_shape, x_from_train_images,
                         y_from_train_images, model_name,
                         num_workers, num_layers_trained,
-                        n_iters=2, resume=args.resume):
+                        resume, n_iters=2):
     for iter in range(1, n_iters + 1):
         x_train, x_valid, y_train, y_valid = train_test_split(x_from_train_images, y_from_train_images, test_size=0.01)
         print('\nIteration {}'.format(iter))
@@ -142,4 +142,4 @@ if __name__ == '__main__':
         data_dir='data/train/')
     train_for_k_iterations(args.batch_size, tuple(args.input_shape),
                         x_from_train_images, y_from_train_images, args.model_name, args.num_workers,
-                        args.num_layers_trained)
+                        args.num_layers_trained, args.resume)
