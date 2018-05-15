@@ -4,10 +4,12 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras.models import load_model
 from keras.optimizers import Adam
-from sklearn.model_selection import train_test_split
+from keras import regularizers
+
+from sklearn.utils.class_weight import compute_class_weight
 
 from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
 from model_utils import build_xception, build_densenet_201, build_inception_v3, build_inception_resnet_v2 
@@ -16,7 +18,7 @@ parser = argparse.ArgumentParser(
     description='Training')
 parser.add_argument(
     '--batch-size',
-    default=32,
+    default=16,
     type=int,
     metavar='N',
     help='mini-batch size')
@@ -45,101 +47,110 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
-parser.add_argument(
-    '--num-layers-trained',
-    type=int,
-    metavar='N',
-    help='number of layers to be trained in second stage')
 
 
-def train_for_k_iterations(batch_size,
-                        input_shape, x_from_train_images,
-                        y_from_train_images, model_name,
-                        num_workers, num_layers_trained,
-                        resume, n_iters=1):
-    for iter in range(1, n_iters + 1):
-        x_train, x_valid, y_train, y_valid = train_test_split(x_from_train_images, y_from_train_images, test_size=0.01)
-        print('\nIteration {}'.format(iter))
-        print('Found {} images belonging to {} classes'.format(len(x_train), 128))
-        print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
-        train_generator = FurnituresDatasetWithAugmentation(
-            x_train, y_train,
-            batch_size=batch_size, input_shape=input_shape)
-        valid_generator = FurnituresDatasetNoAugmentation(
-            x_valid, y_valid,
-            batch_size=batch_size, input_shape=input_shape)
+def train(batch_size, input_shape,
+    x_train, y_train,
+    x_valid, y_valid, 
+    model_name, num_workers, 
+    resume):
+    print('Found {} images belonging to {} classes'.format(len(x_train), 128))
+    print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
+    train_generator = FurnituresDatasetWithAugmentation(
+        x_train, y_train,
+        batch_size=batch_size, input_shape=input_shape)
+    valid_generator = FurnituresDatasetNoAugmentation(
+        x_valid, y_valid,
+        batch_size=batch_size, input_shape=input_shape)
+    class_weight = compute_class_weight('balanced'
+                                               ,np.unique(y_train)
+                                               ,y_train)
 
-        filepath = 'checkpoint/{}/iter{}.hdf5'.format(model_name,
-                                                           iter)
-        save_best = ModelCheckpoint(filepath=filepath,
-                                    verbose=1,
-                                    monitor='val_acc',
-                                    save_best_only=True,
-                                    mode='max')
-        callbacks = [save_best]
-        
-        if resume == 'True':
-            print('Resume training from the last checkpoint')
+    filepath = 'checkpoint/{}/iter{}.hdf5'.format(model_name,
+                                                        iter)
+    save_best = ModelCheckpoint(filepath=filepath,
+                                verbose=1,
+                                monitor='val_acc',
+                                save_best_only=True,
+                                mode='max')
+    reduce_lr = ReduceLROnPlateau(monitor='val_acc',
+        factor=0.1,
+        patience=2,
+        verbose=1)
+    callbacks = [save_best, reduce_lr]
+    
+    if resume == 'True':
+        print('Resume training from the last checkpoint')
+        model = load_model(filepath)
+        trainable_count = int(
+            np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
+        print('Trainable params: {:,}'.format(trainable_count))
+        model.fit_generator(generator=train_generator,
+                        epochs=args.epochs,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        class_weight=class_weight,
+                        workers=num_workers)
+        K.clear_session()
+    else:
+        print('Train the last Dense layer')
+        if os.path.exists(filepath):
             model = load_model(filepath)
-            trainable_count = int(
-                np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
-            print('Trainable params: {:,}'.format(trainable_count))
-            model.fit_generator(generator=train_generator,
-                            epochs=args.epochs,
+        elif model_name == 'xception':
+            model = build_xception()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'inception_v3':
+            model = build_inception_v3()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'inception_resnet_v2':
+            model = build_inception_resnet_v2()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'densenet_201':
+            model = build_densenet_201()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=1,
                             callbacks=callbacks,
                             validation_data=valid_generator,
+                            class_weight=class_weight,
                             workers=num_workers)
-            K.clear_session()
-        else:
-            print('Train the last Dense layer')
-            if os.path.exists(filepath):
-                model = load_model(filepath)
-            elif model_name == 'xception':
-                model = build_xception()
-                model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                              metrics=['acc'])
-            elif model_name == 'inception_v3':
-                model = build_inception_v3()
-                model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                              metrics=['acc'])
-            elif model_name == 'inception_resnet_v2':
-                model = build_inception_resnet_v2()
-                model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                              metrics=['acc'])
-            elif model_name == 'densenet_201':
-                model = build_densenet_201()
-                model.compile(optimizer=Adam(lr=1e-3, decay=1e-5), loss='categorical_crossentropy',
-                              metrics=['acc'])
-            model.fit_generator(generator=train_generator,
-                                epochs=5,
-                                callbacks=callbacks,
-                                validation_data=valid_generator,
-                                workers=num_workers)
-            K.clear_session()
+        K.clear_session()
 
-            print("\nFine-tune previous blocks")
-            model = load_model(filepath)
-            for i in range(1, num_layers_trained):
-                model.layers[-i].trainable = True
-            trainable_count = int(
-                np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
-            print('Trainable params: {:,}'.format(trainable_count))
-            model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                          loss='categorical_crossentropy',
-                          metrics=['acc'])
-            model.fit_generator(generator=train_generator,
-                                epochs=25,
-                                callbacks=callbacks,
-                                validation_data=valid_generator,
-                                workers=num_workers)
-            K.clear_session()
+        print("\nFine-tune the network")
+        model = load_model(filepath)
+        for layer in model.layers:
+            layer.trainable = True
+            if hasattr(layer, 'kernel_regularizer'):
+                layer.kernel_regularizer= regularizers.l2(0.0001)
+        trainable_count = int(
+            np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
+        print('Trainable params: {:,}'.format(trainable_count))
+        model.compile(optimizer=Adam(lr=0.00003),
+                        loss='categorical_crossentropy',
+                        metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=19,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            class_weight=class_weight,
+                            workers=num_workers)
+        K.clear_session()
 
         
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    x_from_train_images, y_from_train_images = get_image_paths_and_labels(
+    x_train, y_train = get_image_paths_and_labels(
         data_dir='data/train/')
-    train_for_k_iterations(args.batch_size, tuple(args.input_shape),
-                        x_from_train_images, y_from_train_images, args.model_name, args.num_workers,
-                        args.num_layers_trained, args.resume)
+    x_valid, y_valid = get_image_paths_and_labels(
+        data_dir='data/validation/')
+
+    train(args.batch_size, tuple(args.input_shape),
+                        x_train, y_train, 
+                        x_valid, y_valid, 
+                        args.model_name, args.num_workers,
+                        args.resume)
