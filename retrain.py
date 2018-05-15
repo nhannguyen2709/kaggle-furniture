@@ -52,7 +52,7 @@ def retrain_for_k_iterations(batch_size,
                         input_shape, merged_x,
                         merged_y, model_name,
                         num_workers,
-                        resume, n_iters=2):
+                        resume, n_iters=1):
     for iter in range(1, n_iters + 1):
         x_train, x_valid, y_train, y_valid = train_test_split(merged_x, merged_y, test_size=0.005)
         print('\nIteration {}'.format(iter))
