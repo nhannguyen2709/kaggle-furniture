@@ -84,6 +84,15 @@ def randomHueSaturationValue(image, hue_shift_limit=(-180, 180),
     return image
 
 
+def randomCrop(img, random_crop_size):
+    assert img.shape[2] == 3
+    height, width = img.shape[0], img.shape[1]
+    dy, dx = random_crop_size
+    x = np.random.randint(0, width - dx + 1)
+    y = np.random.randint(0, height - dy + 1)
+    return img[y:(y+dy), x:(x+dx), :]
+
+
 class FurnituresDatasetWithAugmentation(Sequence):
     def __init__(
             self,
@@ -121,8 +130,9 @@ class FurnituresDatasetWithAugmentation(Sequence):
             img = cv2.imread(img_path)
             img = cv2.resize(
                 img,
-                self.input_shape,
+                (self.input_shape[0] + 20, self.input_shape[1] + 20),
                 interpolation=cv2.INTER_NEAREST)
+            img = randomCrop(img, self.input_shape[0])
             img = randomHueSaturationValue(img)
             img = randomShiftScaleRotate(img,
                                          shift_limit=(-0.05, 0.05),
