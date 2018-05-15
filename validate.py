@@ -1,9 +1,12 @@
 import argparse
 from keras.models import load_model
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
 from data import FurnituresDatasetNoAugmentation, get_image_paths_and_labels
 
 parser = argparse.ArgumentParser(
-    description='Retraining')
+    description='Validating')
 parser.add_argument(
     '--batch-size',
     default=64,
@@ -30,7 +33,7 @@ if __name__== '__main__':
     args = parser.parse_args()
     print(args)
 
-    x_valid, y_valid = get_image_paths_and_labels('data/validation')
+    x_valid, y_valid = get_image_paths_and_labels('data/validation/')
     valid_generator = FurnituresDatasetNoAugmentation(
             x_valid, y_valid, 
             batch_size=args.batch_size, input_shape=args.input_shape)
