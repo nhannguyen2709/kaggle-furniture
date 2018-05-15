@@ -36,7 +36,8 @@ if __name__== '__main__':
     x_valid, y_valid = get_image_paths_and_labels('data/validation/')
     valid_generator = FurnituresDatasetNoAugmentation(
             x_valid, y_valid, 
-            batch_size=args.batch_size, input_shape=args.input_shape)
+            batch_size=args.batch_size, input_shape=tuple(args.input_shape))
+
     filepath = 'checkpoint/{}/iter{}.hdf5'.format(args.model_name, 1)
     model = load_model(filepath)
     val_loss, val_acc = model.evaluate_generator(valid_generator, workers=args.num_workers)
