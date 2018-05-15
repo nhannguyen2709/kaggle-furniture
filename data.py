@@ -108,7 +108,7 @@ class FurnituresDatasetWithAugmentation(Sequence):
     def on_epoch_end(self):
         if self.shuffle:
             self.x, self.y = shuffle(self.x, self.y)
-
+    
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
 
@@ -123,10 +123,7 @@ class FurnituresDatasetWithAugmentation(Sequence):
                 img,
                 self.input_shape,
                 interpolation=cv2.INTER_NEAREST)
-            img = randomHueSaturationValue(img,
-                                           hue_shift_limit=(-50, 50),
-                                           sat_shift_limit=(-5, 5),
-                                           val_shift_limit=(-15, 15))
+            img = randomHueSaturationValue(img)
             img = randomShiftScaleRotate(img,
                                          shift_limit=(-0.05, 0.05),
                                          scale_limit=(-0, 0),
