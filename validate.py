@@ -31,7 +31,6 @@ parser.add_argument(
 
 if __name__== '__main__':
     args = parser.parse_args()
-    print(args)
 
     x_valid, y_valid = get_image_paths_and_labels('data/validation/')
     valid_generator = FurnituresDatasetNoAugmentation(

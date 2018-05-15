@@ -104,7 +104,6 @@ def retrain_for_k_iterations(batch_size,
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    print(args)
 
     x_from_train_images, y_from_train_images = get_image_paths_and_labels(
     data_dir='data/train/')
