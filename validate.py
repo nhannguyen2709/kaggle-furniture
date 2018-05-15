@@ -40,5 +40,5 @@ if __name__== '__main__':
 
     filepath = 'checkpoint/{}/iter{}.hdf5'.format(args.model_name, 1)
     model = load_model(filepath)
-    val_loss, val_acc = model.evaluate_generator(valid_generator, workers=args.num_workers)
+    val_loss, val_acc = model.evaluate_generator(valid_generator, workers=args.num_workers, verbose=1)
     print('\n {} - val_loss: {}- val_acc: {}'.format(filepath.split('/')[1], val_loss, val_acc))
