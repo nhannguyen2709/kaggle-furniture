@@ -51,7 +51,7 @@ if __name__=='__main__':
     submit_filename = args.submit_fname
 
     test_folders = sorted(os.listdir(test_data_dir))
-    test_dirs = ['data/test/test12695']# [os.path.join(test_data_dir, test_folder) for test_folder in test_folders]
+    test_dirs = ['data/test/test12703']# [os.path.join(test_data_dir, test_folder) for test_folder in test_folders]
 
     model_paths = ['checkpoint/{}/iter1.hdf5'.format(args.model_name)] 
 
