@@ -1,55 +1,50 @@
 import numpy as np
 import pandas as pd
 import os
-
-import tensorflow as tf
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
 from keras.layers import Dense, GlobalMaxPooling2D
-from keras.models import Model
+from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
 from model_utils import build_xception
 
 num_workers = 4
 test_data_dir = 'data/test'
-submit_dir = 'submission/xception'
-checkpoint_dir = 'checkpoint/xception'
-submit_filename = 'iter12345'
+submit_dir = 'submission/ensemble'
+submit_filename = 'avg_12_crops_2_models'
 
 test_folders = sorted(os.listdir(test_data_dir))
 test_dirs = [[os.path.join(test_data_dir, test_folder)
              for test_folder in test_folders][0]]
-test_dirs = ['data/test/test12703']
-
-folds = sorted(os.listdir(checkpoint_dir))
+model_paths = ['checkpoint/xception/iter1.hdf5', 'checkpoint/densenet_201/iter1.hdf5']
 
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
 
 test_pred = np.zeros((12703, 128))
 pred_times = 0
-for test_dir in test_dirs:
-    print('\nData {}'.format(test_dir.split('/')[-1]))
-    test_generator = test_datagen.flow_from_directory(
-        test_dir,
-        batch_size=64,
-        target_size=(299, 299),
-        class_mode='categorical',
-        shuffle=False)
-    for fold in folds:
-        pred_times += 1	    
-        print('Model obtained from {}'.format(fold))
-        model = build_xception()
-        model.load_weights(os.path.join(checkpoint_dir, fold))
-        fold_pred = model.predict_generator(
+for path in model_paths:
+    print('\nModel obtained from {}'.format(path))
+    model = load_model(path)
+    for test_dir in test_dirs:
+        print('Data {}'.format(test_dir.split('/')[-1]))
+        test_generator = test_datagen.flow_from_directory(
+            test_dir,
+            batch_size=64,
+            target_size=(299, 299),
+            class_mode='categorical',
+            shuffle=False)
+
+        pred = model.predict_generator(
             generator=test_generator, workers=num_workers, verbose=1)
-        K.clear_session()
-        test_pred += fold_pred
-    del test_generator
+        test_pred += pred
+        pred_times += 1
+        del test_generator
+    K.clear_session()
 
 test_pred /= pred_times
-np.save('submission/xception/{}.npy'.format(submit_filename), test_pred)
+np.save('submission/ensemble/{}.npy'.format(submit_filename), test_pred)
 test_pred = np.argmax(test_pred, axis=1)
 test_pred = test_pred + 1.
 # recreate test generator to extract image filenames
@@ -57,6 +52,7 @@ test_generator = test_datagen.flow_from_directory(
     test_dir,
     batch_size=64,
     target_size=(299, 299),
+    verbose=0,
     class_mode='categorical',
     shuffle=False)
 
