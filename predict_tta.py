@@ -61,7 +61,7 @@ my_submit = pd.concat([pd.Series(test_generator.filenames),
 my_submit.columns = ['id', 'predicted']
 my_submit['id'] = my_submit['id'].map(lambda x: int(
     x.split('/')[-1].split('.')[0]))
-my_submit['predicted'].fillna(-1, inplace=True)
+my_submit['predicted'].fillna(83, inplace=True)
 my_submit['predicted'] = my_submit['predicted'].astype(int)
 my_submit['predicted'] = my_submit['predicted']
 
@@ -70,8 +70,8 @@ missing_pictures_idx = list(set.difference(
     set(sample_submit['id']), set(my_submit['id'])))
 missing_pictures_pred = sample_submit.loc[sample_submit['id'].isin(
     missing_pictures_idx)]
+missing_pictures_pred['predicted'] = 83 # substitute random labels with 83, least frequent class in train dataset
 
 final_submit = my_submit.append(missing_pictures_pred)
-final_submit.loc[final_submit.predicted == -1, 'predicted'] = 101
 final_submit.sort_values('id', inplace=True)
 final_submit.to_csv(os.path.join(submit_dir, '{}.csv'.format(submit_filename)), index=False)
