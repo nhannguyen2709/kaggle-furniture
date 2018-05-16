@@ -17,7 +17,7 @@ submit_filename = 'avg_12_crops_2_models'
 test_folders = sorted(os.listdir(test_data_dir))
 test_dirs = ['data/test/test12703']# [os.path.join(test_data_dir, test_folder) for test_folder in test_folders]
 
-model_paths = ['checkpoint/densenet_201/iter1.hdf5'] # 'checkpoint/xception/iter1.hdf5', 
+model_paths = ['checkpoint/xception/iter1.hdf5'] # 'checkpoint/densenet_201/iter1.hdf5', 
 
 test_datagen = ImageDataGenerator(
     rescale=1. / 255)
