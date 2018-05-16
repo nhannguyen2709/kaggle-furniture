@@ -52,7 +52,6 @@ test_generator = test_datagen.flow_from_directory(
     test_dir,
     batch_size=64,
     target_size=(299, 299),
-    verbose=0,
     class_mode='categorical',
     shuffle=False)
 
