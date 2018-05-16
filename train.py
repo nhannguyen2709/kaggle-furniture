@@ -5,6 +5,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
+from keras_ClipLR import ClipLR
 from keras_EMA import ExponentialMovingAverage
 from keras.models import load_model
 from keras.optimizers import Adam
@@ -77,7 +78,8 @@ def train(batch_size, input_shape,
         factor=0.1,
         patience=2,
         verbose=1)
-    callbacks = [save_best, reduce_lr]
+    clip_lr = ClipLR(verbose=1)
+    callbacks = [save_best, reduce_lr, clip_lr]
     
     if resume == 'True':
         print('Resume training from the last checkpoint')
