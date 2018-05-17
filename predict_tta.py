@@ -42,7 +42,7 @@ parser.add_argument(
     help='maximum number of processes to spin up')
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     args = parser.parse_args()
 
     num_workers = args.num_workers
@@ -51,9 +51,10 @@ if __name__=='__main__':
     submit_filename = args.submit_fname
 
     test_folders = sorted(os.listdir(test_data_dir))
-    test_dirs = [os.path.join(test_data_dir, test_folder) for test_folder in test_folders] # ['data/test/test12703'] 
+    test_dirs = [os.path.join(test_data_dir, test_folder)
+                 for test_folder in test_folders]  # ['data/test/test12703']
 
-    model_paths = ['checkpoint/{}/iter1.hdf5'.format(args.model_name)] 
+    model_paths = ['checkpoint/{}/iter1.hdf5'.format(args.model_name)]
 
     test_datagen = ImageDataGenerator(
         rescale=1. / 255)
@@ -80,7 +81,11 @@ if __name__=='__main__':
         K.clear_session()
 
     test_pred /= pred_times
-    np.save(os.path.join(submit_dir, '{}.npy'.format(submit_filename)), test_pred)
+    np.save(
+        os.path.join(
+            submit_dir,
+            '{}.npy'.format(submit_filename)),
+        test_pred)
     test_pred = np.argmax(test_pred, axis=1)
     test_pred = test_pred + 1.
     # recreate test generator to extract image filenames
@@ -92,7 +97,7 @@ if __name__=='__main__':
         shuffle=False)
 
     my_submit = pd.concat([pd.Series(test_generator.filenames),
-                        pd.Series(test_pred)], axis=1)
+                           pd.Series(test_pred)], axis=1)
     my_submit.columns = ['id', 'predicted']
     my_submit['id'] = my_submit['id'].map(lambda x: int(
         x.split('/')[-1].split('.')[0]))
@@ -105,8 +110,13 @@ if __name__=='__main__':
         set(sample_submit['id']), set(my_submit['id'])))
     missing_pictures_pred = sample_submit.loc[sample_submit['id'].isin(
         missing_pictures_idx)]
-    missing_pictures_pred['predicted'] = 83 # substitute random labels with 83, least frequent class in train dataset
+    # substitute random labels with 83, least frequent class in train dataset
+    missing_pictures_pred['predicted'] = 83
 
     final_submit = my_submit.append(missing_pictures_pred)
     final_submit.sort_values('id', inplace=True)
-    final_submit.to_csv(os.path.join(submit_dir, '{}.csv'.format(submit_filename)), index=False)
+    final_submit.to_csv(
+        os.path.join(
+            submit_dir,
+            '{}.csv'.format(submit_filename)),
+        index=False)

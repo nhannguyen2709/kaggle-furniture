@@ -90,7 +90,7 @@ def randomCrop(img, random_crop_size):
     dy, dx = random_crop_size
     x = np.random.randint(0, width - dx + 1)
     y = np.random.randint(0, height - dy + 1)
-    return img[y:(y+dy), x:(x+dx), :]
+    return img[y:(y + dy), x:(x + dx), :]
 
 
 class FurnituresDatasetWithAugmentation(Sequence):
@@ -117,7 +117,7 @@ class FurnituresDatasetWithAugmentation(Sequence):
     def on_epoch_end(self):
         if self.shuffle:
             self.x, self.y = shuffle(self.x, self.y)
-    
+
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
 
@@ -127,7 +127,7 @@ class FurnituresDatasetWithAugmentation(Sequence):
 
         batch_imgs = []
         for img_path in batch_x:
-            img = cv2.imread(img_path)            
+            img = cv2.imread(img_path)
             img = cv2.resize(
                 img,
                 (self.input_shape[0] + 20, self.input_shape[1] + 20),
