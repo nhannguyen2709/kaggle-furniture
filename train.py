@@ -8,10 +8,11 @@ from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras_ClipLR import ClipLR
 from keras_EMA import ExponentialMovingAverage
 from keras.models import load_model
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 from keras import regularizers
 
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.model_selection import train_test_split
 
 from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
 from model_utils import build_xception, build_densenet_201, build_inception_v3, build_inception_resnet_v2 
@@ -49,6 +50,10 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
+parser.add_argument(
+    '--scheme',
+    default='trainval',
+    type=str)
 
 
 def train(batch_size, input_shape,
@@ -78,11 +83,11 @@ def train(batch_size, input_shape,
         factor=0.1,
         patience=2,
         verbose=1)
-    clip_lr = ClipLR(verbose=1)
+    clip_lr = ClipLR(new_lr=0.00003, verbose=1)
     callbacks = [save_best, reduce_lr, clip_lr]
     
     if resume == 'True':
-        print('Resume training from the last checkpoint')
+        print('\nResume training from the last checkpoint')
         model = load_model(filepath)
         trainable_count = int(
             np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
@@ -95,32 +100,32 @@ def train(batch_size, input_shape,
                         workers=num_workers)
         K.clear_session()
     else:
-        # print('Train the last Dense layer')
-        # if os.path.exists(filepath):
-        #     model = load_model(filepath)
-        # elif model_name == 'xception':
-        #     model = build_xception()
-        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-        #                     metrics=['acc'])
-        # elif model_name == 'inception_v3':
-        #     model = build_inception_v3()
-        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-        #                     metrics=['acc'])
-        # elif model_name == 'inception_resnet_v2':
-        #     model = build_inception_resnet_v2()
-        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-        #                     metrics=['acc'])
-        # elif model_name == 'densenet_201':
-        #     model = build_densenet_201()
-        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-        #                     metrics=['acc'])
-        # model.fit_generator(generator=train_generator,
-        #                     epochs=1,
-        #                     callbacks=callbacks,
-        #                     validation_data=valid_generator,
-        #                     class_weight=class_weight,
-        #                     workers=num_workers)
-        # K.clear_session()
+        print('\nTrain the last Dense layer')
+        if os.path.exists(filepath):
+            model = load_model(filepath)
+        elif model_name == 'xception':
+            model = build_xception()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'inception_v3':
+            model = build_inception_v3()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'inception_resnet_v2':
+            model = build_inception_resnet_v2()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'densenet_201':
+            model = build_densenet_201()
+            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        model.fit_generator(generator=train_generator,
+                            epochs=1,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            class_weight=class_weight,
+                            workers=num_workers)
+        K.clear_session()
 
         print("\nFine-tune the network")
         model = load_model(filepath)
@@ -135,24 +140,110 @@ def train(batch_size, input_shape,
                         loss='categorical_crossentropy',
                         metrics=['acc'])
         model.fit_generator(generator=train_generator,
-                            epochs=2,
+                            epochs=19,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             class_weight=class_weight,
                             workers=num_workers)
         K.clear_session()
 
-        
+
+def finetune_on_valid_images(batch_size, input_shape,
+    x_train, y_train,
+    x_valid, y_valid, 
+    model_name, num_workers, 
+    resume):
+    print('Found {} images belonging to {} classes'.format(len(x_train), 128))
+    print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
+    train_generator = FurnituresDatasetWithAugmentation(
+        x_train, y_train,
+        batch_size=batch_size, input_shape=input_shape)
+    valid_generator = FurnituresDatasetNoAugmentation(
+        x_valid, y_valid,
+        batch_size=batch_size, input_shape=input_shape)
+
+    filepath = 'checkpoint/{}/iter2.hdf5'.format(model_name)
+    save_best = ExponentialMovingAverage(filepath=filepath,
+                                verbose=1,
+                                monitor='val_acc',
+                                save_best_only=True,
+                                mode='max')
+    reduce_lr = ReduceLROnPlateau(monitor='val_acc',
+        factor=0.1,
+        patience=2,
+        verbose=1)
+    clip_lr = ClipLR(new_lr=1e-5, verbose=1)
+    callbacks = [save_best, reduce_lr, clip_lr]
+    
+    if resume == 'True':
+        print('\nResume training from the last checkpoint')
+        model = load_model(filepath)
+        trainable_count = int(
+            np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
+        print('Trainable params: {:,}'.format(trainable_count))
+        model.fit_generator(generator=train_generator,
+                        epochs=args.epochs,
+                        callbacks=callbacks,
+                        validation_data=valid_generator,
+                        workers=num_workers)
+        K.clear_session()
+    else:
+        print("\nFine-tune the network")
+        if os.path.exists(filepath):
+            model = load_model(filepath)
+        elif model_name == 'xception':
+            model = build_xception()
+            model.compile(optimizer=SGD(lr=1e-5, momentum=0.9), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'inception_v3':
+            model = build_inception_v3()
+            model.compile(optimizer=SGD(lr=1e-5, momentum=0.9), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'inception_resnet_v2':
+            model = build_inception_resnet_v2()
+            model.compile(optimizer=SGD(lr=1e-5, momentum=0.9), loss='categorical_crossentropy',
+                            metrics=['acc'])
+        elif model_name == 'densenet_201':
+            model = build_densenet_201()
+            model.compile(optimizer=SGD(lr=1e-5, momentum=0.9), loss='categorical_crossentropy',
+                            metrics=['acc'])    
+
+        for layer in model.layers:
+            layer.trainable = True
+            if hasattr(layer, 'kernel_regularizer'):
+                layer.kernel_regularizer= regularizers.l2(0.0001)
+        trainable_count = int(
+            np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
+        print('Trainable params: {:,}'.format(trainable_count))
+        model.fit_generator(generator=train_generator,
+                            epochs=10,
+                            callbacks=callbacks,
+                            validation_data=valid_generator,
+                            workers=num_workers)
+        K.clear_session()
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    x_train, y_train = get_image_paths_and_labels(
-        data_dir='data/train/')
-    x_valid, y_valid = get_image_paths_and_labels(
-        data_dir='data/validation/')
+    if args.scheme == 'trainval':
+        x_train, y_train = get_image_paths_and_labels(
+            data_dir='data/train/')
+        x_valid, y_valid = get_image_paths_and_labels(
+            data_dir='data/validation/')
 
-    train(args.batch_size, tuple(args.input_shape),
-                        x_train, y_train, 
-                        x_valid, y_valid, 
-                        args.model_name, args.num_workers,
-                        args.resume)
+        train(args.batch_size, tuple(args.input_shape),
+                            x_train, y_train, 
+                            x_valid, y_valid, 
+                            args.model_name, args.num_workers,
+                            args.resume)
+    else:
+        x, y = get_image_paths_and_labels(
+            data_dir='data/validation/')
+        x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.05, random_state=53)
+
+        finetune_on_valid_images(args.batch_size, tuple(args.input_shape),
+                            x_train, y_train, 
+                            x_valid, y_valid, 
+                            args.model_name, args.num_workers,
+                            args.resume)
