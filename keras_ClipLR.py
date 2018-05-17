@@ -8,7 +8,7 @@ class ClipLR(Callback):
 
     def on_epoch_begin(self, epoch, logs=None):
         old_lr = K.get_value(self.model.optimizer.lr)
-        if old_lr < 1e-8:
+        if old_lr < 1e-7:
             new_lr = 0.00003
             K.set_value(self.model.optimizer.lr, new_lr)
             if self.verbose > 0:
