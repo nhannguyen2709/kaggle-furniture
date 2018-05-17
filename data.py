@@ -128,11 +128,17 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_imgs = []
         for img_path in batch_x:
             img = cv2.imread(img_path)
+            
+            # img = cv2.resize(
+            #     img,
+            #     (self.input_shape[0] + 20, self.input_shape[1] + 20),
+            #     interpolation=cv2.INTER_NEAREST)
+            # img = randomCrop(img, self.input_shape)
+            
             img = cv2.resize(
                 img,
-                (self.input_shape[0] + 20, self.input_shape[1] + 20),
-                interpolation=cv2.INTER_NEAREST)
-            img = randomCrop(img, self.input_shape)
+                self.input_shape)
+                
             img = randomHueSaturationValue(img)
             img = randomShiftScaleRotate(img,
                                          shift_limit=(-0.05, 0.05),
