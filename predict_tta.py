@@ -40,6 +40,16 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
+parser.add_argument(
+    '--iter',
+    default=1,
+    type=int,
+    help='1: weights from model trained on train images, 2: weights from model finetuned on validation images')
+parser.add_argument(
+    '--num-crops',
+    default=12,
+    type=int,
+    help='1: predict using original images, 12: 12-crop prediction')
 
 
 if __name__ == '__main__':
@@ -51,34 +61,35 @@ if __name__ == '__main__':
     submit_filename = args.submit_fname
 
     test_folders = sorted(os.listdir(test_data_dir))
-    test_dirs = [os.path.join(test_data_dir, test_folder)
-                 for test_folder in test_folders]  # ['data/test/test12703']
 
-    model_paths = ['checkpoint/{}/iter1.hdf5'.format(args.model_name)]
+    if args.num_crops == 1:
+        test_dirs = ['data/test/test12703']  
+    elif args.num_crops == 12:
+        test_dirs = [os.path.join(test_data_dir, test_folder) for test_folder in test_folders]
+
+    model_path = 'checkpoint/{}/iter{}.hdf5'.format(args.model_name, args.iter)
 
     test_datagen = ImageDataGenerator(
         rescale=1. / 255)
 
     test_pred = np.zeros((12703, 128))
     pred_times = 0
-    for path in model_paths:
-        print('\nModel obtained from {}'.format(path))
-        model = load_model(path)
-        for test_dir in test_dirs:
-            print('Data {}'.format(test_dir.split('/')[-1]))
-            test_generator = test_datagen.flow_from_directory(
-                test_dir,
-                batch_size=args.batch_size,
-                target_size=(299, 299),
-                class_mode='categorical',
-                shuffle=False)
+    model = load_model(model_path)
+    for test_dir in test_dirs:
+        print('Data {}'.format(test_dir.split('/')[-1]))
+        test_generator = test_datagen.flow_from_directory(
+            test_dir,
+            batch_size=args.batch_size,
+            target_size=(299, 299),
+            class_mode='categorical',
+            shuffle=False)
 
-            pred = model.predict_generator(
-                generator=test_generator, workers=num_workers, verbose=1)
-            test_pred += pred
-            pred_times += 1
-            del test_generator
-        K.clear_session()
+        pred = model.predict_generator(
+            generator=test_generator, workers=num_workers, verbose=1)
+        test_pred += pred
+        pred_times += 1
+        del test_generator
+    K.clear_session()
 
     test_pred /= pred_times
     np.save(
