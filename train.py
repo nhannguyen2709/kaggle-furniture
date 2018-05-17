@@ -95,32 +95,32 @@ def train(batch_size, input_shape,
                         workers=num_workers)
         K.clear_session()
     else:
-        print('Train the last Dense layer')
-        if os.path.exists(filepath):
-            model = load_model(filepath)
-        elif model_name == 'xception':
-            model = build_xception()
-            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-                            metrics=['acc'])
-        elif model_name == 'inception_v3':
-            model = build_inception_v3()
-            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-                            metrics=['acc'])
-        elif model_name == 'inception_resnet_v2':
-            model = build_inception_resnet_v2()
-            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-                            metrics=['acc'])
-        elif model_name == 'densenet_201':
-            model = build_densenet_201()
-            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-                            metrics=['acc'])
-        model.fit_generator(generator=train_generator,
-                            epochs=1,
-                            callbacks=callbacks,
-                            validation_data=valid_generator,
-                            class_weight=class_weight,
-                            workers=num_workers)
-        K.clear_session()
+        # print('Train the last Dense layer')
+        # if os.path.exists(filepath):
+        #     model = load_model(filepath)
+        # elif model_name == 'xception':
+        #     model = build_xception()
+        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+        #                     metrics=['acc'])
+        # elif model_name == 'inception_v3':
+        #     model = build_inception_v3()
+        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+        #                     metrics=['acc'])
+        # elif model_name == 'inception_resnet_v2':
+        #     model = build_inception_resnet_v2()
+        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+        #                     metrics=['acc'])
+        # elif model_name == 'densenet_201':
+        #     model = build_densenet_201()
+        #     model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
+        #                     metrics=['acc'])
+        # model.fit_generator(generator=train_generator,
+        #                     epochs=1,
+        #                     callbacks=callbacks,
+        #                     validation_data=valid_generator,
+        #                     class_weight=class_weight,
+        #                     workers=num_workers)
+        # K.clear_session()
 
         print("\nFine-tune the network")
         model = load_model(filepath)
@@ -135,7 +135,7 @@ def train(batch_size, input_shape,
                         loss='categorical_crossentropy',
                         metrics=['acc'])
         model.fit_generator(generator=train_generator,
-                            epochs=19,
+                            epochs=2,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             class_weight=class_weight,
