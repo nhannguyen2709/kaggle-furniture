@@ -73,11 +73,11 @@ def train(batch_size, input_shape,
         'balanced', np.unique(y_train), y_train)
 
     filepath = 'checkpoint/{}/iter1.hdf5'.format(model_name)
-    save_best = ExponentialMovingAverage(filepath=filepath,
-                                         verbose=1,
-                                         monitor='val_acc',
-                                         save_best_only=True,
-                                         mode='max')
+    save_best = ModelCheckpoint(filepath=filepath,
+                                verbose=1,
+                                monitor='val_acc',
+                                save_best_only=True,
+                                mode='max')
     reduce_lr = ReduceLROnPlateau(monitor='val_acc',
                                   factor=0.1,
                                   patience=2,
