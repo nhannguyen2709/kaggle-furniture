@@ -7,6 +7,8 @@ from imgaug import augmenters as iaa
 from keras.utils import Sequence, to_categorical
 from keras.preprocessing.image import ImageDataGenerator
 
+import imgaug as ia
+from imgaug import augmenters as iaa
 from sklearn.utils import shuffle
 
 
@@ -21,76 +23,6 @@ def get_image_paths_and_labels(data_dir):
     x = np.array(x)
     y = np.array(y)
     return x, y
-
-
-def randomHorizontalFlip(image, u=0.5):
-    if np.random.random() < u:
-        image = cv2.flip(image, 1)
-
-    return image
-
-
-def randomShiftScaleRotate(image,
-                           shift_limit=(-0.05, 0.05),
-                           scale_limit=(-0.1, 0.1),
-                           rotate_limit=(-45, 45), aspect_limit=(0, 0),
-                           borderMode=cv2.BORDER_CONSTANT, u=0.5):
-    if np.random.random() < u:
-        height, width, _ = image.shape
-
-        angle = np.random.uniform(rotate_limit[0], rotate_limit[1])  # degree
-        scale = np.random.uniform(1 + scale_limit[0], 1 + scale_limit[1])
-        aspect = np.random.uniform(1 + aspect_limit[0], 1 + aspect_limit[1])
-        sx = scale * aspect / (aspect ** 0.5)
-        sy = scale / (aspect ** 0.5)
-        dx = round(np.random.uniform(shift_limit[0], shift_limit[1]) * width)
-        dy = round(np.random.uniform(shift_limit[0], shift_limit[1]) * height)
-
-        cc = np.math.cos(angle / 180 * np.math.pi) * sx
-        ss = np.math.sin(angle / 180 * np.math.pi) * sy
-        rotate_matrix = np.array([[cc, -ss], [ss, cc]])
-
-        box0 = np.array([[0, 0], [width, 0], [width, height], [0, height], ])
-        box1 = box0 - np.array([width / 2, height / 2])
-        box1 = np.dot(box1, rotate_matrix.T) + \
-            np.array([width / 2 + dx, height / 2 + dy])
-
-        box0 = box0.astype(np.float32)
-        box1 = box1.astype(np.float32)
-        mat = cv2.getPerspectiveTransform(box0, box1)
-        image = cv2.warpPerspective(image, mat, (width, height), flags=cv2.INTER_LINEAR, borderMode=borderMode,
-                                    borderValue=(
-                                        0, 0,
-                                        0,))
-
-    return image
-
-
-def randomHueSaturationValue(image, hue_shift_limit=(-180, 180),
-                             sat_shift_limit=(-255, 255),
-                             val_shift_limit=(-255, 255), u=0.5):
-    if np.random.random() < u:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        h, s, v = cv2.split(image)
-        hue_shift = np.random.uniform(hue_shift_limit[0], hue_shift_limit[1])
-        h = cv2.add(h, hue_shift)
-        sat_shift = np.random.uniform(sat_shift_limit[0], sat_shift_limit[1])
-        s = cv2.add(s, sat_shift)
-        val_shift = np.random.uniform(val_shift_limit[0], val_shift_limit[1])
-        v = cv2.add(v, val_shift)
-        image = cv2.merge((h, s, v))
-        image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
-
-    return image
-
-
-def randomCrop(img, random_crop_size):
-    assert img.shape[2] == 3
-    height, width = img.shape[0], img.shape[1]
-    dy, dx = random_crop_size
-    x = np.random.randint(0, width - dx + 1)
-    y = np.random.randint(0, height - dy + 1)
-    return img[y:(y + dy), x:(x + dx), :]
 
 
 class FurnituresDatasetWithAugmentation(Sequence):
@@ -120,27 +52,72 @@ class FurnituresDatasetWithAugmentation(Sequence):
 
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
+        
+    def _data_augmentation(self, images):
+        # Sometimes(0.5, ...) applies the given augmenter in 50% of all cases,
+        # e.g. Sometimes(0.5, GaussianBlur(0.3)) would blur roughly every second image.
+        sometimes = lambda aug: iaa.Sometimes(0.5, aug)
+
+        # Define our sequence of augmentation steps that will be applied to every image
+        # All augmenters with per_channel=0.5 will sample one value _per image_
+        # in 50% of all cases. In all other cases they will sample new values
+        # _per channel_.
+        seq = iaa.Sequential(
+            [
+                # apply the following augmenters to most images
+                iaa.Fliplr(0.5), # horizontally flip 50% of all images
+                # crop images by -5% to 10% of their height/width
+                sometimes(iaa.CropAndPad(
+                    percent=(-0.05, 0.1),
+                    pad_mode=ia.ALL,
+                    pad_cval=(0, 255)
+                )),
+                sometimes(iaa.Affine(
+                    scale={"x": (0.8, 1.2), "y": (0.8, 1.2)}, # scale images to 80-120% of their size, individually per axis
+                    translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)}, # translate by -20 to +20 percent (per axis)
+                    rotate=(20, 30), # rotate by +20 to +30 degrees
+                    order=[0, 1], # use nearest neighbour or bilinear interpolation (fast)
+                    cval=(0, 255), # if mode is constant, use a cval between 0 and 255
+                    mode=ia.ALL # use any of scikit-image's warping modes (see 2nd image from the top for examples)
+                )),
+                # execute 0 to 5 of the following (less important) augmenters per image
+                # don't execute all of them, as that would often be way too strong
+                iaa.SomeOf((0, 5),
+                    [
+                        iaa.OneOf([
+                            iaa.GaussianBlur((0, 0.5)), # blur images with a sigma between 0 and 0.5
+                            iaa.AverageBlur(k=(1, 3)), # blur image using local means with kernel sizes between 1 and 3
+                            iaa.MedianBlur(k=(1, 3)), # blur image using local medians with kernel sizes between 1 and 3
+                        ]),
+                        iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.03*255), per_channel=0.5), # add gaussian noise to images
+                        iaa.Add((-10, 10), per_channel=0.5), # change brightness of images (by -10 to 10 of original value)
+                        iaa.AddToHueAndSaturation((-20, 20)), # change hue and saturation
+                        # either change the brightness of the whole image (sometimes
+                        # per channel) or change the brightness of subareas
+                        iaa.OneOf([
+                            iaa.Multiply((0.5, 1.5), per_channel=0.5),
+                            iaa.FrequencyNoiseAlpha(
+                                exponent=(-4, 0),
+                                first=iaa.Multiply((0.5, 1.5), per_channel=True),
+                                second=iaa.ContrastNormalization((0.5, 2.0))
+                            )
+                        ]),
+                        iaa.ContrastNormalization((1.4, 1.6), per_channel=0.5) # improve or worsen the contrast      
+                    ],
+                    random_order=True
+                )
+            ],
+            random_order=True
+        )
+        return seq.augment_images(images)
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = []
-        for img_path in batch_x:
-            img = cv2.imread(img_path)
-            img = cv2.resize(
-                img,
-                (self.input_shape[0] + 20, self.input_shape[1] + 20),
-                interpolation=cv2.INTER_NEAREST)
-            img = randomCrop(img, self.input_shape)
-            img = randomHueSaturationValue(img)
-            img = randomShiftScaleRotate(img,
-                                         shift_limit=(-0.05, 0.05),
-                                         scale_limit=(-0, 0),
-                                         rotate_limit=(0, 30))
-            img = randomHorizontalFlip(img)
-            batch_imgs.append(img)
-
+        batch_imgs = [cv2.resize(cv2.imread(img_path), (self.input_shape[0] + 20, self.input_shape[1] + 20)) for img_path in batch_x]
+        batch_imgs = self._data_augmentation(batch_imgs)
+        
         return np.array(batch_imgs) / 255., to_categorical(
             np.array(batch_y), num_classes=self.num_classes)
 
