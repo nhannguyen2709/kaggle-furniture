@@ -83,12 +83,16 @@ def train(batch_size, input_shape,
                                 monitor='val_acc',
                                 save_best_only=True,
                                 mode='max')
+    save_on_train_end = ModelCheckpoint(filepath=filepath,
+                                        verbose=1,
+                                        monitor='val_acc',
+                                        period=args.epochs)
     reduce_lr = ReduceLROnPlateau(monitor='val_acc',
                                   factor=0.1,
                                   patience=2,
                                   verbose=1)
     clip_lr = ClipLR(new_lr=0.00003, verbose=1)
-    callbacks = [save_best, reduce_lr, clip_lr]
+    callbacks = [save_best, save_on_train_end, reduce_lr, clip_lr]
 
     if resume == 'True':
         print('\nResume training from the last checkpoint')
