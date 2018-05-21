@@ -5,7 +5,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
-from keras_ClipLR import ClipLR
 from keras_EMA import ExponentialMovingAverage
 from keras.losses import categorical_crossentropy
 from keras.models import load_model
@@ -91,8 +90,7 @@ def train(batch_size, input_shape,
                                   factor=0.1,
                                   patience=2,
                                   verbose=1)
-    clip_lr = ClipLR(new_lr=0.00003, verbose=1)
-    callbacks = [save_best, save_on_train_end, reduce_lr, clip_lr]
+    callbacks = [save_best, save_on_train_end, reduce_lr]
 
     if resume == 'True':
         print('\nResume training from the last checkpoint')
