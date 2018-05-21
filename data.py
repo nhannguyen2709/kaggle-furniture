@@ -5,6 +5,7 @@ import os
 import numpy as np
 from imgaug import augmenters as iaa
 from keras.utils import Sequence, to_categorical
+from keras.applications.imagenet_utils import _preprocess_numpy_input
 from keras.preprocessing.image import ImageDataGenerator
 
 import imgaug as ia
@@ -115,10 +116,15 @@ class FurnituresDatasetWithAugmentation(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_imgs = [cv2.resize(cv2.imread(img_path), (self.input_shape[0] + 20, self.input_shape[1] + 20)) for img_path in batch_x]
+        batch_imgs = [cv2.resize(cv2.imread(img_path), 
+                                 (self.input_shape[0] + 20, self.input_shape[1] + 20), 
+                                 interpolation=cv2.INTER_LINEAR) 
+                      for img_path in batch_x]
         batch_imgs = self._data_augmentation(batch_imgs)
-        
-        return np.array(batch_imgs) / 255., to_categorical(
+        batch_imgs = _preprocess_numpy_input(np.array(batch_imgs),
+            data_format='channels_last', mode='torch')
+
+        return batch_imgs, to_categorical(
             np.array(batch_y), num_classes=self.num_classes)
 
 
@@ -144,8 +150,10 @@ class FurnituresDatasetNoAugmentation(Sequence):
 
         batch_imgs = [cv2.resize(cv2.imread(file_name),
                                  self.input_shape,
-                                 interpolation=cv2.INTER_NEAREST)
+                                 interpolation=cv2.INTER_LINEAR)
                       for file_name in batch_x]
+        batch_imgs = _preprocess_numpy_input(np.array(batch_imgs),
+            data_format='channels_last', mode='torch')
 
-        return np.array(batch_imgs) / 255., to_categorical(
+        return batch_imgs, to_categorical(
             np.array(batch_y), num_classes=self.num_classes)
