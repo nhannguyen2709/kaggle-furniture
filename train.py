@@ -6,7 +6,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras_EMA import ExponentialMovingAverage
-from keras.losses import categorical_crossentropy
 from keras.models import load_model
 from keras.optimizers import Adam, SGD
 from keras import regularizers
@@ -154,14 +153,13 @@ if __name__ == '__main__':
         data_dir='data/train/')
     x_valid, y_valid = get_image_paths_and_labels(
         data_dir='data/validation/')
-    x_val, x_minival, y_val, y_minival = train_test_split(x_valid, y_valid, test_size=0.3)
-    x_train = np.concatenate((x_train, x_val))
-    y_train = np.concatenate((y_train, y_val))
-
+    merged_x = np.concatenate((x_train, x_valid))
+    merged_y = np.concatenate((y_train, y_valid))
+    x_train, x_valid, y_train, y_valid = train_test_split(merged_x, merged_y, test_size=0.01)
 
     train(args.batch_size, tuple(args.input_shape),
             x_train, y_train,
-            x_minival, y_minival,
+            x_valid, y_valid,
             args.model_name, args.num_workers,
             args.resume)
    
