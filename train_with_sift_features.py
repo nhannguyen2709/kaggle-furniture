@@ -9,7 +9,6 @@ from keras.applications.xception import Xception
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras.layers import Input, Concatenate, Dense
-from keras.losses import categorical_crossentropy
 from keras.models import load_model, Model
 from keras.optimizers import Adam, SGD
 from keras import regularizers
