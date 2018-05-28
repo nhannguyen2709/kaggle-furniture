@@ -12,9 +12,9 @@ from keras.optimizers import Adam, SGD
 from keras import regularizers
 
 from sklearn.utils.class_weight import compute_class_weight
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import train_test_split
 
-from data import FurnituresDatasetWithAugmentation, FurnituresDatasetNoAugmentation, get_image_paths_and_labels
+from data import AugmentedDataset, Dataset, get_image_paths_and_labels
 from model_utils import build_xception, build_densenet_201, build_inception_v3, build_inception_resnet_v2
 
 parser = argparse.ArgumentParser(
@@ -63,7 +63,7 @@ def train(batch_size, input_shape,
           resume):
     print('Found {} images belonging to {} classes'.format(len(x_train), 128))
     print('Found {} images belonging to {} classes'.format(len(x_valid), 128))
-    train_generator = FurnituresDatasetWithAugmentation(
+    train_generator = AugmentedDataset(
         x_train, y_train,
         batch_size=batch_size, input_shape=input_shape)
     valid_generator = FurnituresDatasetNoAugmentation(
@@ -87,7 +87,7 @@ def train(batch_size, input_shape,
                                         monitor='val_acc',
                                         period=args.epochs)
     reduce_lr = ReduceLROnPlateau(monitor='val_acc',
-                                  factor=0.1,
+                                  factor=0.2,
                                   patience=2,
                                   verbose=1)
     callbacks = [save_best, save_on_train_end, reduce_lr]
@@ -104,29 +104,22 @@ def train(batch_size, input_shape,
                             validation_data=valid_generator,
                             class_weight=class_weight_dict,
                             workers=num_workers)
-        K.clear_session()
     else:
         print('\nTrain the last Dense layer')
-        if os.path.exists(filepath):
-            model = load_model(filepath)
-        elif model_name == 'xception':
-            model = build_xception()
-            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-                          metrics=['acc'])
+        if model_name == 'densenet_201':
+            model = build_densenet_201()
         elif model_name == 'inception_v3':
             model = build_inception_v3()
-            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-                          metrics=['acc'])
         elif model_name == 'inception_resnet_v2':
             model = build_inception_resnet_v2()
-            model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
-                          metrics=['acc'])
-        elif model_name == 'densenet_201':
-            model = build_densenet_201()
+        elif model_name == 'xception':
+            model = build_xception()
+        for layer in model.layers[:-1]:
+            layer.trainable = False
             model.compile(optimizer=Adam(lr=0.001), loss='categorical_crossentropy',
                           metrics=['acc'])
         model.fit_generator(generator=train_generator,
-                            epochs=1,
+                            epochs=5,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             class_weight=class_weight_dict,
@@ -142,11 +135,11 @@ def train(batch_size, input_shape,
         trainable_count = int(
             np.sum([K.count_params(p) for p in set(model.trainable_weights)]))
         print('Trainable params: {:,}'.format(trainable_count))
-        model.compile(optimizer=Adam(lr=0.00003),
+        model.compile(optimizer=Adam(lr=3e-5),
                       loss='categorical_crossentropy',
                       metrics=['acc'])
         model.fit_generator(generator=train_generator,
-                            epochs=19,
+                            epochs=30,
                             callbacks=callbacks,
                             validation_data=valid_generator,
                             class_weight=class_weight_dict,
@@ -161,16 +154,14 @@ if __name__ == '__main__':
         data_dir='data/train/')
     x_valid, y_valid = get_image_paths_and_labels(
         data_dir='data/validation/')
-    merged_x = np.concatenate((x_train, x_valid))
-    merged_y = np.concatenate((y_train, y_valid))
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.005, random_state=53)
-    for train_idx, valid_idx in sss.split(merged_x, merged_y):
-        x_train, x_valid = merged_x[train_idx], merged_x[valid_idx]
-        y_train, y_valid = merged_y[train_idx], merged_y[valid_idx]
+    x_val, x_minival, y_val, y_minival = train_test_split(x_valid, y_valid, test_size=0.3)
+    x_train = np.concatenate((x_train, x_val))
+    y_train = np.concatenate((y_train, y_val))
+
 
     train(args.batch_size, tuple(args.input_shape),
             x_train, y_train,
-            x_valid, y_valid,
+            x_minival, y_minival,
             args.model_name, args.num_workers,
             args.resume)
    
